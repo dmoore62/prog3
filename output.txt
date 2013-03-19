@@ -1,0 +1,11 @@
+Source Code:
+<
+ <= 
+
+Lexeme Table:
+lexeme		token type
+<			11
+<=			12
+
+Lexeme List:
+11 12 
