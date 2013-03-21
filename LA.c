@@ -80,8 +80,6 @@ int main(void){
 	fprintf(fpout,  "Lexeme Table:\n");
 	fprintf(fpout, "lexeme\t\ttoken type\n");
 	while((ch = fgetc(fpin)) != EOF){
-
-		printf("Took in, %c\n", ch);
 		
 		if(cur_id == NULL){
 			cur_id = (char*)calloc(13, sizeof(char));
