@@ -11,22 +11,30 @@
 #define MAX_STACK_HEIGHT 2000
 #define MAX_CODE_LENGTH 500
 #define MAX_LEXI_LEVELS 3
+#define MAX_SYMBOL_TABLE_SIZE 2000
 
-// symbol_table[MAX_SYMBOL_TABLE_SIZE];
 
 typedef struct symbols_read_in
     {
-	int kind; 		// const = 1, var = 2, proc = 3
-	char name[10];	// name up to 11 chars
-	int val; 		// number (ASCII value)
-	int level; 		// L level
-	int addr; 		// M address
-	struct symbols_read_in* next;
+    int kind;       // const = 1, var = 2, proc = 3
+    char name[10];  // name up to 11 chars
+    int val;        // number (ASCII value)
+    int level;      // L level
+    int addr;       // M address
+//  struct symbols_read_in* next;
     } symbol;
 
-//void read_input_file(FILE *ifp);
-void BLOCK(char c, FILE *ifp);
-void STATEMENT(char c, FILE *ifp);
+
+symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
+
+
+void BLOCK(char c[], FILE *ifp, int Lev, int tx);
+void STATEMENT(int c, FILE *ifp);
+void CONDITION(int c, FILE *ifp);
+void EXPRESSION(int c, FILE *ifp);
+void TERM(int c, FILE *ifp);
+void FACTOR(int c, FILE *ifp);
+void ENTER(int type, char name[], int val, int tx, int dx, int Lev);
 
 void ERROR_1();  //Use = instead of :=.
 void ERROR_2();  //= must be followed by a number.
@@ -43,7 +51,7 @@ void ERROR_12(); //Assignment to constant or procedure is not allowed.
 void ERROR_13(); //Assignment operator expected.
 void ERROR_14(); //call must be followed by an identifier.
 void ERROR_15(); //Call of a constant or variable is meaningless.
-void ERROR_16(); //then	 expected.
+void ERROR_16(); //then  expected.
 void ERROR_17(); //Semicolon or } expected.
 void ERROR_18(); //do expected.
 void ERROR_19(); //Incorrect symbol following statement.
@@ -54,11 +62,9 @@ void ERROR_23(); //The preceding factor cannot begin with this symbol.
 void ERROR_24(); //An expression cannot begin with this symbol.
 void ERROR_25(); //This number is too large.
 void ERROR_26(); //Identifier followed by an expression must be followed by :=
+void ERROR_27(); //end expected
 
-
-int main()
-{
-    typedef enum {
+typedef enum {
     nulsym = 1, identsym, numbersym, plussym, minussym,
     multsym,  slashsym, oddsym, eqsym, neqsym, lessym, leqsym,
     gtrsym, geqsym, lparentsym, rparentsym, commasym, semicolonsym,
@@ -66,10 +72,12 @@ int main()
     whilesym, dosym, callsym, constsym, intsym, procsym, writesym,
     readsym , elsesym } token_type;
 
+int main()
+{
 
     //open the input file
     FILE *ifp;  //input file pointer
-    char *filename = "CG_input.txt";
+    char *filename = "input.txt";
     ifp = fopen(filename, "r");
 
     if(!ifp){
@@ -78,15 +86,19 @@ int main()
     }
 
     //declare variables
-    char c;
+    int c;          //token read from file
+    char s[11];     //identifier read from file
+    int Lev = 0;    //lexicological level
+    int tx = 1;     //table index
+    int dx = 4;     //data index = distance from bottom data is located
 
     while(!feof(ifp)){
 
         //read in file one character at a time
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
 
         //call function BLOCK
-        BLOCK(c, ifp);
+        BLOCK(c, ifp, Lev, tx);
 
         //the last symbol in the file should be a period
         if(c != periodsym){
@@ -130,7 +142,7 @@ int main()
 //    while(!feof(ifp)){
 //
 //        //read in file one character at a time
-//        c = getc(ifp);
+//        fscanf(ifp, "%d", &c);
 //
 //        //store values in current_symbol
 //
@@ -142,93 +154,225 @@ int main()
 //}
 
 
-void BLOCK(char c, FILE *ifp){
+void BLOCK(int c, FILE *ifp, int Lev, int tx){
 
-    //check for a constant
-    if(char c == constsym){
-        while (char c != commasym){
-            c = getc(ifp);
+    //declare variables
+    int type;    //keep track of type stored in symbol table - const = 1, var = 2, proc = 3
+    char s[11];  //stores token if token is a string (identifier)
+    int dx = 4;  //data index = distance from bottom data is located
+    int addr;    //M address for symbol table
+
+    //store the table index
+    int tx0 = tx;
+
+    //check that the maximum lexicological level is not exceeded
+    if(Lev > MAX_LEXI_LEVELS){
+        printf("*****Error - maximum lexicological levels exceeded.");
+        exit(0);
+    }
+
+    //check for a constant (const-declaration)
+    if(c == constsym){
+        while (c == commasym){
+            fscanf(ifp, "%d", &c);
             if(c != identsym){
                 //const, int, procedure must be followed by identifier.
                 ERROR_4();
             }//end if
-            c = getc(ifp);
+            //the identsym should be followed by the identifier
+            fscanf(ifp, "%s", s);
+            fscanf(ifp, "%d", &c);
             if (c != eqsym){
                 //Identifier must be followed by =.
                 ERROR_3();
             }//end if
-            c = getc(ifp);
+            fscanf(ifp, "%d", &c);
             if(!isdigit(c)){
                 //= must be followed by a number.
                 ERROR_2();
             }//end if
-            c = getc(ifp);
+            //type for symbole table is const = 1
+            type = 1;
+            ENTER(type, s, c, tx, dx, Lev);
+            fscanf(ifp, "%d", &c); //if this is a comma, the loop is repeated
         }//end while
         if(c != semicolonsym){
             //Incorrect symbol following statement.
             ERROR_19();
         }//end if
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
     }//end if constsym
 
-    //check for intsym
+    //check for intsym (var-declaration)
     if(c == intsym){
-        while(c != commasym){
-            c = getc(ifp);
+        while(c == commasym){
+            fscanf(ifp, "%d", &c);
             if(c != identsym){
                 //const, int, procedure must be followed by identifier.
                 ERROR_4();
             }//end if
-            c = getc(ifp);
+            //the next token should be an identifier, i.e. it will not be an int
+            fscanf(ifp, "%s", s);
+            //type for symbole table is var = 2
+            type = 2;
+            ENTER(type, s, c, tx, dx, Lev);
+            fscanf(ifp, "%d", c); //if this is a comma, the loop is repeated
         }//end while
         if(c != semicolonsym){
             //Incorrect symbol following statement.
             ERROR_19();
         }//end if
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
     }//end if intsym
 
-    //check for procsym
+    //check for procsym (procedure-declaration)
     while(c == procsym){
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
         if(c != identsym){
             //const, int, procedure must be followed by identifier.
             ERROR_4();
         }//end if
-        c = getc(ifp);
+        //the next token should be an identifier, i.e. it will not be an int
+        fscanf(ifp, "%s", s);
+        //type for symbole table is proc = 3
+        type = 3;
+        ENTER(type, s, c, tx, dx, Lev);
+        fscanf(ifp, "%d", &c);
         if(c != semicolonsym){
             //Incorrect symbol following statement.
             ERROR_19();
         }//end if
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
         //call BLOCK again
-        BLOCK(c, ifp);
+        BLOCK(c, ifp, Lev, tx);
         if(c != semicolonsym){
             //Incorrect symbol following statement.
             ERROR_19();
         }//end if
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
     }//end while procsym
 
     //call STATEMENT
-    STATEMENT(c, ifp)
+    STATEMENT(c, ifp);
 
 }//end BLOCK
 
 
 
-STATEMENT(char c, FILE *ifp){
+void STATEMENT(int c, FILE *ifp){
 
     //check for identifier
     if(c == identsym){
-        c = getc(ifp);
+        fscanf(ifp, "%d", &c);
         if(c != becomessym){
             //Identifier followed by an expression must be followed by :=
             ERROR_26();
-        }
+        }//end if
+        fscanf(ifp, "%d", &c);
+        EXPRESSION(c, ifp);
     }//end if
+    else if(c == callsym){
+        fscanf(ifp, "%d", &c);
+        if(c != identsym){
+            //call must be followed by an identifier.
+            ERROR_14();
+        }//end if
+        fscanf(ifp, "%d", &c);
+    }//end if callsym
+    else if(c == beginsym){
+        fscanf(ifp, "%d", &c);
+        STATEMENT(c, ifp);
+        while(c == semicolonsym){
+            fscanf(ifp, "%d", &c);
+            STATEMENT(c, ifp);
+        }//end while
+        if(c != endsym){
+            //end expected
+            ERROR_27();
+        }
+        fscanf(ifp, "%d", &c);
+    }//end if beginsym
+    else if(c == ifsym){
+        fscanf(ifp, "%d", &c);
+        CONDITION(c, ifp);
+        if(c != thensym){
+            //then   expected.
+            ERROR_16();
+        }
+        fscanf(ifp, "%d", &c);
+        STATEMENT(c, ifp);
+    }//end if ifsym
+    else if(c == whilesym){
+        fscanf(ifp, "%d", &c);
+        CONDITION(c, ifp);
+        if(c != dosym){
+            //do expected.
+            ERROR_18();
+        }
+        fscanf(ifp, "%d", &c);
+        STATEMENT(c, ifp);
+    }//end if whilesym
 
 }//end STATEMENT
+
+void CONDITION(int c, FILE *ifp){
+    if(c == oddsym){
+        fscanf(ifp, "%d", &c);
+        EXPRESSION(c, ifp);
+    }
+    else{
+        EXPRESSION(c, ifp);
+        if((c != eqsym)||(c != neqsym)||(c != lessym)||(c != leqsym)||(c != gtrsym)||(c != geqsym)){
+            //Relational operator expected.
+            ERROR_20();
+        }
+        fscanf(ifp, "%d", &c);
+        EXPRESSION(c, ifp);
+    }//end else
+}//end CONDITION
+
+void EXPRESSION(int c, FILE *ifp){
+    if((c == plussym)||(c == minussym)){
+        fscanf(ifp, "%d", &c);
+    }//end if
+    TERM(c, ifp);
+    while((c == plussym)||(c == minussym)){
+        fscanf(ifp, "%d", &c);
+        TERM(c,ifp);
+    }//end while
+}//end EXPRESSION
+
+void TERM(int c, FILE *ifp){
+    FACTOR(c, ifp);
+    while((c == multsym)||(c == slashsym)){
+        fscanf(ifp, "%d", &c);
+        FACTOR(c, ifp);
+    }//end while
+}//end TERM
+
+void FACTOR(int c, FILE *ifp){
+    if(c == identsym){
+        fscanf(ifp, "%d", &c);
+    }
+    else if(isdigit(c)){
+        fscanf(ifp, "%d", &c);
+    }
+    else if(c == lparentsym){
+        fscanf(ifp, "%d", &c);
+        EXPRESSION(c, ifp);
+        if(c != rparentsym){
+            //Right parenthesis missing.
+            ERROR_22();
+        }
+        fscanf(ifp, "%d", &c);
+    }
+    else{
+        //The preceding factor cannot begin with this symbol.
+        ERROR_23();
+    }
+}//end FACTOR
+
+
 
 /* ************************************************************* */
 /* Print ERROR messages                                          */
@@ -324,9 +468,9 @@ void ERROR_15(){
     exit(0);
 }
 
-//then	 expected.
+//then   expected.
 void ERROR_16(){
-    printf("*****Error number 16, then	 expected.");
+    printf("*****Error number 16, then   expected.");
     exit(0);
 }
 
@@ -386,6 +530,12 @@ void ERROR_25(){
 
 //Identifier followed by an expression must be followed by :=
 void ERROR_26(){
-    printf("*****Identifier followed by an expression must be followed by :=");
+    printf("*****Identifier must be followed by := when followed by an expression");
+    exit(0);
+}
+
+//end expected
+void ERROR_27(){
+    printf("*****end expected");
     exit(0);
 }
