@@ -12,23 +12,23 @@
 
 // symbol_table[MAX_SYMBOL_TABLE_SIZE];
 
-typedef struct symbols_read_in
+struct symbol
     {
 	int kind; 		// const = 1, var = 2, proc = 3
-	char name[10];	// name up to 11 chars
+	char* name;	// name up to 11 chars
 	int val; 		// number (ASCII value)
 	int level; 		// L level
 	int addr; 		// M address
 	struct symbols_read_in* next;
-    } symbol;
+    };
 
 //function declarations
 //for language
-void BLOCK(FILE* inFile);
-void CONSTDEC(FILE* inFile);
-void VARDEC(FILE* inFile);
-void PROCDEC(FILE* inFile);
-void STATEMENT(FILE* inFile);
+void BLOCK();
+void CONSTDEC();
+void VARDEC();
+void PROCDEC();
+void STATEMENT();
 void CONDITION();
 void REL_OP();
 void EXPRESSION();
@@ -46,19 +46,23 @@ void f_write();
 void f_empty();
 
 //helpers
-void get_token(FILE* inFile);
-char* get_name(FILE* inFile);
-int get_num(FILE* inFile);
+void get_token();
+char* get_name();
+int get_num();
 void ERROR(int i);
+void table_insert(struct symbol sym);
 
 //Global Variables
 static int token;
 static int errors = 0;
-
+static FILE* inFile;
+static struct symbol symbol_table[500];
+static int table_index = 0;
+static int level = 0;
 int main(void){
 	//declare variables for generator
-
-	FILE* inFile = fopen("quick_debug.txt", "r");
+	
+	inFile = fopen("quick_debug.txt", "r");
 	
 
 	//main statements
@@ -67,8 +71,9 @@ int main(void){
 	}
 	while(!feof(inFile)){
 
-		get_token(inFile);
-		BLOCK(inFile);
+		get_token();
+		BLOCK();
+		level --;
 
 		if(token != 19){
 			ERROR(9);
@@ -78,51 +83,133 @@ int main(void){
 	fclose(inFile);
 }//end main
 
-void BLOCK(FILE* inFile){
+void BLOCK(){
 	
 	if(token > 27 && token < 31){
 		if(token == 28){
 
-			get_token(inFile);
-			CONSTDEC(inFile);
+			CONSTDEC();
 		}
 		if(token == 29){
 
-			get_token(inFile);
-			VARDEC(inFile);
+			VARDEC();
 		}
 		if(token == 30){
 
-			get_token(inFile);
-			PROCDEC(inFile);
+			PROCDEC();
 		}
 	}
 	else{
-		STATEMENT(inFile);
+		STATEMENT();
 	}
 
 	return;
 }//end Block
 
-void CONSTDEC(FILE* inFile){
-	printf("Got into CONSTDEC\n");
+void CONSTDEC(){
+	//printf("Got into CONSTDEC\n");
+	struct symbol sym;
+	sym.kind = 1;
+	sym.level = level;
+	do{
+		get_token();
+		if(token == 2){
+			sym.name = get_name();
+			if(!isdigit((int)sym.name)){
+				get_token();
+				if(token == 9){
+					get_token();
+					if(token == 3){
+						sym.val = get_num();
+						printf("%s, %d, %d\n", sym.name, sym.val, sym.level);
+						if(!isalpha(sym.val)){
+							table_insert(sym);
+							sym.name = NULL;
+							sym.val = (int)NULL;
+							get_token();
+						}else{
+							ERROR(2);
+						}
+					}else{
+						ERROR(2);
+					}
+				}else{
+					ERROR(3);
+				}
+			}else{
+				ERROR(29);
+			}
+		}else{
+			ERROR(4);
+		}
+	}while(token == 17);
+	if(token != 18){
+		ERROR(5);
+	}
+	get_token();
+	return;
+}
+
+void VARDEC(){
+	struct symbol sym;
+	sym.kind = 2;
+	sym.level = level;
+	do{
+		get_token();
+		if(token == 2){
+			sym.name = get_name();
+			if(!isdigit((int)sym.name)){
+				printf("%s, %d\n", sym.name, sym.level);
+				table_insert(sym);
+				sym.name = NULL;
+				get_token();
+			}else{
+				ERROR(29);
+			}
+		}else{
+			ERROR(4);
+		}
+	}while(token == 17);
+	if(token != 18){
+		ERROR(5);
+	}
+	get_token();
+	return;
+}
+
+void PROCDEC(){
+	struct symbol sym;
+	sym.kind = 3;
+	sym.level = level;
+	do{
+		get_token();
+		if(token == 2){
+			sym.name = get_name();
+			if(!isdigit((int)sym.name)){
+				printf("%s, %d\n", sym.name, sym.level);
+				table_insert(sym);
+				sym.name = NULL;
+				level ++;
+				get_token();
+				if(token == 18){
+					get_token();
+					BLOCK();
+				}else{
+					ERROR(17);
+				}
+			}else{
+				ERROR(29);
+			}
+		}else{
+			ERROR(4);
+		}
+	}while(token == 18);
+	get_token();
 
 	return;
 }
 
-void VARDEC(FILE* inFile){
-	printf("Got into VARDEC\n");
-
-	return;
-}
-
-void PROCDEC(FILE* inFile){
-	printf("Got into PROCDEC");
-
-	return;
-}
-
-void STATEMENT(FILE* inFile){
+void STATEMENT(){
 	printf("Got into STATEMENT");
 	if(token == 2){
 		f_ident();
@@ -269,11 +356,19 @@ void ERROR(int i){
 		case 27:
 			printf("ERROR #%d, Unexpected end of file.\n", i);
 			exit(0);
-		break; 
+		break;
+		case 28:
+			printf("ERROR #%d, variable cannot begin with number\n", i);
+			exit(0);
+		break;
+		case 29:
+			printf("ERROR #%d, expecting variable name\n", i);
+			exit(0);
+		break;
 	}//end switch
 }//end error
 
-void get_token(FILE* inFile){
+void get_token(){
 
 	if(!feof(inFile)){
 		fscanf(inFile, "%d", &token);
@@ -283,3 +378,37 @@ void get_token(FILE* inFile){
 	}
 	return;
 }//end get_token
+
+char* get_name(){
+	char* name = (char*)calloc(11, sizeof(char));
+	fscanf(inFile, "%s", name);
+
+	return name;
+}//end get_name
+
+int get_num(){
+	int i;
+	fscanf(inFile, "%d", &i);
+	return i;
+}//end get_num
+
+void table_insert(struct symbol sym){
+	if(sym.kind != (int)NULL){
+		symbol_table[table_index].kind = sym.kind;
+	}
+	if(sym.name != NULL){
+		symbol_table[table_index].name = sym.name;
+	}
+	if(sym.val != (int)NULL){
+		symbol_table[table_index].val = sym.val;
+	}
+	if(sym.level != (int)NULL){
+		symbol_table[table_index].level = sym.level;
+	}
+	if(sym.addr != (int)NULL){
+		symbol_table[table_index].addr = sym.addr;
+	}
+	table_index ++;
+
+	return;
+}
