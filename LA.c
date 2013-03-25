@@ -433,7 +433,7 @@ struct node* add_rear(struct node* ll, char* val){
 
 void print_list(struct node* ll, FILE* fpout){
 	while (ll != NULL){
-		fprintf(fpout, "%s ", ll->value);
+		fprintf(fpout, " %s", ll->value);
 		ll = ll->next;
 	}
 }//end print_list

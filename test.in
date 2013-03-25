@@ -1,15 +1,7 @@
 const n = 13;
-int i, h;
-procedure sub;
-	const k = 7;
-	int j, h;
-	begin
-		j := n;
-		i := 1;
-		h := k;
-	end;
+int i;
 begin
 	i := 3;
-	h := 0;
-	call sub;
+	if i = 3 then
+		i := 4;
 end.

@@ -51,6 +51,7 @@ char* get_name();
 int get_num();
 void ERROR(int i);
 void table_insert(struct symbol sym);
+int find_ident(char* id);
 
 //Global Variables
 static int token;
@@ -59,6 +60,7 @@ static FILE* inFile;
 static struct symbol symbol_table[500];
 static int table_index = 0;
 static int level = 0;
+
 int main(void){
 	//declare variables for generator
 	
@@ -99,9 +101,8 @@ void BLOCK(){
 			PROCDEC();
 		}
 	}
-	else{
-		STATEMENT();
-	}
+	
+	STATEMENT();
 
 	return;
 }//end Block
@@ -210,7 +211,7 @@ void PROCDEC(){
 }
 
 void STATEMENT(){
-	printf("Got into STATEMENT");
+	printf("Got into STATEMENT\n");
 	if(token == 2){
 		f_ident();
 	}else if(token == 27){
@@ -225,26 +226,228 @@ void STATEMENT(){
 		f_read();
 	}else if(token == 31){
 		f_write();
-	}else{
-
+	}else if(token != 19){
+		f_empty();
 	}
+
+	return;
 }
 
-void f_ident(){}
+void f_ident(){
+	printf("Got into f_ident\n");
+	struct symbol sym;
+	int sym_index;
+	sym.name = get_name();
+	if(!isdigit((int)sym.name)){
+		sym_index = find_ident(sym.name);
+		if(sym_index >= 0){
+			get_token();
+			if(token == 20){
+				get_token();
+				EXPRESSION();
 
-void f_call(){}
+				//>>>>>>>>>>>>>>>>>>>>>>>>>>>>need to do something here!
 
-void f_begin(){}
+			}else{ERROR(13);}
+		}else{ERROR(11);}
+	}else{ERROR(11);}
 
-void f_if(){}
+	return;
+}
 
-void f_while(){}
+void f_call(){
+	struct symbol sym;
+	int sym_index;
+	get_token();
+	if(token == 2){
+		sym.name = get_name();
+		if(!isdigit((int)sym.name)){
+			sym_index = find_ident(sym.name);
+			if(sym_index >= 0){
 
-void f_read(){}
+				//>>>>>>>>>>>>>>>>>>>>>.need to do something here
 
-void f_write(){}
+			}else{ERROR(11);}
+		}else{ERROR(11);}
+	}else{ERROR(14);}
 
-void f_empty(){}
+	return;
+}
+
+void f_begin(){
+	do{
+		get_token();
+		STATEMENT();
+	}while(token == 18);
+	if(token == 22){
+		get_token();
+		return;
+	}else{ERROR(30);}
+
+	return;
+}
+
+void f_if(){
+	get_token();
+	CONDITION();
+	if(token == 24){
+		get_token();
+		STATEMENT();
+	}else{ERROR(16);}
+}
+
+void f_while(){
+	get_token();
+	CONDITION();
+	if(token == 26){
+		get_token();
+		STATEMENT();
+	}else{ERROR(18);}
+
+	return;
+}
+
+void f_read(){
+	struct symbol sym;
+	int sym_index;
+	get_token();
+	if(token == 2){
+		sym.name = get_name();
+		if(!isdigit((int)sym.name)){
+			sym_index = find_ident(sym.name);
+			if(sym_index >= 0){
+				//need to do something here
+			}else{ERROR(11);}
+		}else{ERROR(11);}
+	}else{ERROR(29);}
+
+	return;
+}
+
+void f_write(){
+	struct symbol sym;
+	int sym_index;
+	get_token();
+	if(token == 2){
+		sym.name = get_name();
+		if(!isdigit((int)sym.name)){
+			sym_index = find_ident(sym.name);
+			if(sym_index >= 0){
+				//need to do something here
+			}else{ERROR(11);}
+		}else{ERROR(11);}
+	}else{ERROR(29);}
+
+	return;
+}
+
+void f_empty(){
+	printf("EMPTY_STRING?\n");
+
+	return;
+}
+
+void CONDITION(){
+	if(token == 8){
+		get_token();
+		EXPRESSION();
+
+		//>>>>>>>>>>>>>>>>>>>do something
+
+	}else{
+		get_token();
+		EXPRESSION();
+		if(token > 8 && token < 15){
+			REL_OP();
+		}else{ERROR(20);}
+	}
+
+	return;
+}
+
+void REL_OP(){
+	switch(token){
+		case 9:
+			get_token();
+			EXPRESSION();
+		break;
+		case 10:
+			get_token();
+			EXPRESSION();
+		break;
+		case 11:
+			get_token();
+			EXPRESSION();
+		break;
+		case 12:
+			get_token();
+			EXPRESSION();
+		break;
+		case 13:
+			get_token();
+			EXPRESSION();
+		break;
+		case 14:
+			get_token();
+			EXPRESSION();
+		break;
+	}//end switch
+
+	return;
+}
+
+void EXPRESSION(){
+	if(token == 4 || token == 5){
+		get_token();
+	}
+
+	do{
+		TERM();
+		//get_token();
+	}while(token == 4 || token == 5);
+
+	return;
+}
+
+void TERM(){
+	do{
+		FACTOR();
+		get_token();
+	}while(token == 6 || token == 7);
+
+	return;
+}
+
+void FACTOR(){
+	struct symbol sym;
+	int sym_index;
+	
+	if(token == 2){
+		sym.name = get_name();
+		if(!isdigit((int)sym.name)){
+			sym_index = find_ident(sym.name);
+			if(sym_index >= 0){
+
+				//>>>>>>>>>>>>>>>>>>>need to do something here
+
+			}else{ERROR(11);}
+		}else{ERROR(11);}
+	}else if(token == 3){
+		sym.val = get_num();
+		if(!isalpha(sym.val)){
+			printf("Got number! %d\n", sym.val);
+
+			//>>>>>>>>>>>>>>>>>>>>>>>need to do something here
+
+		}else{ERROR(2);}
+	}else if(token == 15){
+		get_token();
+		EXPRESSION();
+		if(token != 16){ERROR(22);}
+	}else{ERROR(29);}
+
+	return;
+}
 
 void ERROR(int i){
 	errors ++;
@@ -365,6 +568,10 @@ void ERROR(int i){
 			printf("ERROR #%d, expecting variable name\n", i);
 			exit(0);
 		break;
+		case 30:
+			printf("ERROR #%d, 'End' Expected\n", i);
+			exit(0);
+		break;
 	}//end switch
 }//end error
 
@@ -411,4 +618,15 @@ void table_insert(struct symbol sym){
 	table_index ++;
 
 	return;
+}
+
+int find_ident(char* id){
+	int i;
+	for(i = 0; i < table_index; i ++){
+		if(strcmp(id, symbol_table[i].name) == 0){
+			return i;
+		}
+	}
+
+	return -1;
 }

@@ -1,0 +1,31 @@
+code holder
+This file holds debug code snippets
+
+Full Test Code:
+const n = 13;
+int i, h;
+procedure sub;
+	const k = 7;
+	int j, h;
+	begin
+		j := n;
+		i := 1;
+		h := k;
+	end;
+begin
+	i := 3;
+	h := 0;
+	call sub;
+end.
+
+28 2 n 9 3 13 18 29 2 i 17 2 h 18 30 2 sub 18 28 2 k 9 3 7 18 29 2 j 17 2 h 18 21 2 j 20 2 n 18 2 i 20 3 1 18 2 h 20 2 k 18 22 18 21 2 i 20 3 3 18 2 h 20 3 0 18 27 2 sub 18 22 19 
+
+Tests multi-level CONST VAR and PROC declarations:
+28 2 n 9 3 13 17 2 x 9 3 235 18 29 2 i 17 2 h 18 30 2 sub 18 28 2 k 9 3 7 18 29 2 j 17 2 h 18 19
+
+Tests assignment calls:
+const n = 13;
+int i;
+begin
+	i := 3;
+end.
