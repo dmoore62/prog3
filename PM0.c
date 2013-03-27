@@ -21,7 +21,7 @@ int base(int l, int base, int* s);
 int main(void){
 //main declarations
        FILE* fpin = fopen("file.in", "r");
-       FILE* fpout = fopen("output.txt", "w");
+       FILE* fpout = fopen("VMoutput.txt", "w");
        struct instruction instr_ary[MAX_CODE_LENGTH];
 //main statements    
        //fill array of structs
