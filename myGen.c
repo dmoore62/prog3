@@ -10,7 +10,17 @@
 #define MAX_CODE_LENGTH 500
 #define MAX_LEXI_LEVELS 3
 
-// symbol_table[MAX_SYMBOL_TABLE_SIZE];
+struct cell
+	{
+		int op;
+		int l;
+		int m;
+	};
+
+struct code_block
+	{
+		struct cell block_cells[2000];
+	};
 
 struct symbol
     {
@@ -60,6 +70,7 @@ static FILE* inFile;
 static struct symbol symbol_table[500];
 static int table_index = 0;
 static int level = 0;
+static struct code_block level_blocks[5];
 
 int main(void){
 	//declare variables for generator
@@ -116,7 +127,8 @@ void CONSTDEC(){
 		get_token();
 		if(token == 2){
 			sym.name = get_name();
-			if(!isdigit((int)sym.name)){
+			if(sym.name != NULL){
+				printf("Got here!\n");
 				get_token();
 				if(token == 9){
 					get_token();
@@ -159,7 +171,7 @@ void VARDEC(){
 		get_token();
 		if(token == 2){
 			sym.name = get_name();
-			if(!isdigit((int)sym.name)){
+			if(sym.name != NULL){
 				printf("%s, %d\n", sym.name, sym.level);
 				table_insert(sym);
 				sym.name = NULL;
@@ -186,7 +198,8 @@ void PROCDEC(){
 		get_token();
 		if(token == 2){
 			sym.name = get_name();
-			if(!isdigit((int)sym.name)){
+			printf("Got here!\n");
+			if(sym.name != NULL){
 				printf("%s, %d\n", sym.name, sym.level);
 				table_insert(sym);
 				sym.name = NULL;
@@ -238,7 +251,7 @@ void f_ident(){
 	struct symbol sym;
 	int sym_index;
 	sym.name = get_name();
-	if(!isdigit((int)sym.name)){
+	if(sym.name != NULL){
 		sym_index = find_ident(sym.name);
 		if(sym_index >= 0){
 			get_token();
@@ -261,7 +274,7 @@ void f_call(){
 	get_token();
 	if(token == 2){
 		sym.name = get_name();
-		if(!isdigit((int)sym.name)){
+		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
 
@@ -313,7 +326,7 @@ void f_read(){
 	get_token();
 	if(token == 2){
 		sym.name = get_name();
-		if(!isdigit((int)sym.name)){
+		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
 				//need to do something here
@@ -330,7 +343,7 @@ void f_write(){
 	get_token();
 	if(token == 2){
 		sym.name = get_name();
-		if(!isdigit((int)sym.name)){
+		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
 				//need to do something here
@@ -424,7 +437,7 @@ void FACTOR(){
 	
 	if(token == 2){
 		sym.name = get_name();
-		if(!isdigit((int)sym.name)){
+		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
 
@@ -587,6 +600,7 @@ void get_token(){
 }//end get_token
 
 char* get_name(){
+
 	char* name = (char*)calloc(11, sizeof(char));
 	fscanf(inFile, "%s", name);
 
