@@ -521,7 +521,7 @@ void TERM(){
 
 void FACTOR(){
 	struct symbol sym;
-	struct cell this_cell;
+	struct cell lit_cell;
 	int sym_index;
 	
 	if(token == 2){
@@ -533,11 +533,11 @@ void FACTOR(){
 				sym = symbol_table[sym_index];
 				printf("Found symbol, %s, %d, %d, %d\n", sym.name, sym.level, sym.val, sym.addr);
 				//create new cell with proper info
-				this_cell.op = 1;
-				this_cell.l = 0;
-				this_cell.m = sym.val;
+				lit_cell.op = 1;
+				lit_cell.l = 0;
+				lit_cell.m = sym.val;
 				//put cell in appropriate cell_block
-				level_blocks[level].block_cells[level_blocks[level].size] = this_cell;
+				level_blocks[level].block_cells[level_blocks[level].size] = lit_cell;
 				level_blocks[level].size ++;
 				
 
@@ -548,11 +548,11 @@ void FACTOR(){
 		if(!isalpha(sym.val)){
 			printf("Got number! %d\n", sym.val);
 			//input number into code list
-			this_cell.op = 1;
-			this_cell.l = 0;
-			this_cell.m = sym.val;
+			lit_cell.op = 1;
+			lit_cell.l = 0;
+			lit_cell.m = sym.val;
 			//put cell in appropriate cell_block
-			level_blocks[level].block_cells[level_blocks[level].size] = this_cell;
+			level_blocks[level].block_cells[level_blocks[level].size] = lit_cell;
 			level_blocks[level].size ++;
 
 		}else{ERROR(2);}
