@@ -467,30 +467,59 @@ void CONDITION(){
 }
 
 void REL_OP(){
+	struct cell rel_cell;
+	rel_cell.op = 2;
+	rel_cell.l = 0;
+
 	switch(token){
 		case 9:
 			get_token();
 			EXPRESSION();
+			rel_cell.m = 8;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			level_blocks[level].size ++;
+
 		break;
 		case 10:
 			get_token();
 			EXPRESSION();
+			rel_cell.m = 9;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			level_blocks[level].size ++;
 		break;
 		case 11:
 			get_token();
 			EXPRESSION();
+			rel_cell.m = 10;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			level_blocks[level].size ++;
 		break;
 		case 12:
 			get_token();
 			EXPRESSION();
+			rel_cell.m = 11;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			level_blocks[level].size ++;
 		break;
 		case 13:
 			get_token();
 			EXPRESSION();
+			rel_cell.m = 12;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			level_blocks[level].size ++;
 		break;
 		case 14:
 			get_token();
 			EXPRESSION();
+			rel_cell.m = 13;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			level_blocks[level].size ++;
 		break;
 	}//end switch
 
@@ -498,12 +527,26 @@ void REL_OP(){
 }
 
 void EXPRESSION(){
-	if(token == 4 || token == 5){
+	struct cell exp_cell;
+	exp_cell.op = 2;
+	exp_cell.l = 0;
+	/*if(token == 4 || token == 5){
 		get_token();
-	}
+	}*/
 
 	do{
 		TERM();
+		if(token == 4){
+			exp_cell.m = 2;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
+			level_blocks[level].size ++;
+		}else if(token == 5){
+			exp_cell.m = 3;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
+			level_blocks[level].size ++;
+		}
 		//get_token();
 	}while(token == 4 || token == 5);
 
@@ -511,9 +554,26 @@ void EXPRESSION(){
 }
 
 void TERM(){
+	struct cell term_cell;
+	term_cell.op = 0;
+	term_cell.l = 0;
+
 	do{
 		FACTOR();
-		get_token();
+		//get_token();
+		if(token == 6){
+			term_cell.m = 4;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = term_cell;
+			level_blocks[level].size ++;
+		}else if(token == 7){
+			term_cell.m = 5;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = term_cell;
+			level_blocks[level].size ++;
+		}
+		
+
 	}while(token == 6 || token == 7);
 
 	return;
@@ -532,10 +592,18 @@ void FACTOR(){
 				//get symbol info
 				sym = symbol_table[sym_index];
 				printf("Found symbol, %s, %d, %d, %d\n", sym.name, sym.level, sym.val, sym.addr);
-				//create new cell with proper info
-				lit_cell.op = 1;
-				lit_cell.l = 0;
-				lit_cell.m = sym.val;
+				if(sym.addr > 0 && sym.addr < 500){
+					//has addr load from VM
+					//create new cell with proper info
+					lit_cell.op = 3;
+					lit_cell.l = level - sym.level;
+					lit_cell.m = sym.addr;
+				}else{
+					//no addr push lit to stack
+					lit_cell.op = 1;
+					lit_cell.l = 0;
+					lit_cell.m = sym.val;
+				}
 				//put cell in appropriate cell_block
 				level_blocks[level].block_cells[level_blocks[level].size] = lit_cell;
 				level_blocks[level].size ++;
@@ -561,7 +629,7 @@ void FACTOR(){
 		EXPRESSION();
 		if(token != 16){ERROR(22);}
 	}else{ERROR(29);}
-
+	get_token();
 	return;
 }
 
