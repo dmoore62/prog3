@@ -20,6 +20,7 @@ struct cell
 struct code_block
 	{
 		struct cell block_cells[2000];
+		int size;
 	};
 
 struct symbol
@@ -29,7 +30,7 @@ struct symbol
 	int val; 		// number (ASCII value)
 	int level; 		// L level
 	int addr; 		// M address
-	struct symbols_read_in* next;
+	//struct symbols_read_in* next;
     };
 
 //function declarations
@@ -62,21 +63,35 @@ int get_num();
 void ERROR(int i);
 void table_insert(struct symbol sym);
 int find_ident(char* id);
+int get_table_addr();
+void print_code_arrays();
 
 //Global Variables
 static int token;
 static int errors = 0;
 static FILE* inFile;
+static FILE* outFile;
 static struct symbol symbol_table[500];
 static int table_index = 0;
 static int level = 0;
 static struct code_block level_blocks[5];
+static struct code_block master_block;
+static int level_addr_index[3];
 
 int main(void){
 	//declare variables for generator
-	
+	level_blocks[0].size = 0;
+	level_blocks[1].size = 0;
+	level_blocks[2].size = 0;
+	level_blocks[3].size = 0;
+	level_blocks[4].size = 0;
+	master_block.size = 0;
+	level_addr_index[0] = 4;
+	level_addr_index[1] = 4;
+	level_addr_index[2] = 4;
 	inFile = fopen("quick_debug.txt", "r");
-	
+	outFile = fopen("toVM.txt", "w");
+	int stitch_index;
 
 	//main statements
 	if(inFile == NULL){
@@ -86,6 +101,14 @@ int main(void){
 
 		get_token();
 		BLOCK();
+		//update jump address in master table
+		master_block.block_cells[level].m = master_block.size;
+
+		//stitch code block from this level into master
+		for(stitch_index = 0; stitch_index < level_blocks[level].size; stitch_index ++){
+			master_block.block_cells[master_block.size] = level_blocks[level].block_cells[stitch_index];
+			master_block.size ++;
+		}
 		level --;
 
 		if(token != 19){
@@ -94,10 +117,20 @@ int main(void){
 	}//end file
 	
 	fclose(inFile);
+	fclose(outFile);
+
+	print_code_arrays();
 }//end main
 
 void BLOCK(){
-	
+	struct cell jmp_cell;
+	jmp_cell.op = 7;
+	jmp_cell.l = 0;
+	jmp_cell.m = 0;
+	master_block.block_cells[master_block.size] = jmp_cell;
+	master_block.size ++;
+
+	printf("Called Block\n");
 	if(token > 27 && token < 31){
 		if(token == 28){
 
@@ -167,12 +200,14 @@ void VARDEC(){
 	struct symbol sym;
 	sym.kind = 2;
 	sym.level = level;
+	
 	do{
 		get_token();
 		if(token == 2){
 			sym.name = get_name();
+			sym.addr = get_table_addr();
 			if(sym.name != NULL){
-				printf("%s, %d\n", sym.name, sym.level);
+				printf("%s, %d, %d\n", sym.name, sym.level, sym.addr);
 				table_insert(sym);
 				sym.name = NULL;
 				get_token();
@@ -191,23 +226,43 @@ void VARDEC(){
 }
 
 void PROCDEC(){
+	int sym_index;
+	int stitch_index;
 	struct symbol sym;
 	sym.kind = 3;
 	sym.level = level;
 	do{
 		get_token();
+		if(token == 21){
+			break;
+		}
 		if(token == 2){
 			sym.name = get_name();
 			printf("Got here!\n");
 			if(sym.name != NULL){
 				printf("%s, %d\n", sym.name, sym.level);
 				table_insert(sym);
+				sym_index = find_ident(sym.name);
 				sym.name = NULL;
 				level ++;
 				get_token();
 				if(token == 18){
 					get_token();
 					BLOCK();
+					//update the address of the previous proc declaration
+					symbol_table[sym_index].addr = master_block.size;
+
+					//update jump address in master table
+					master_block.block_cells[level].m = master_block.size;
+
+					//stitch code block from this level into master
+					for(stitch_index = 0; stitch_index < level_blocks[level].size; stitch_index ++){
+						master_block.block_cells[master_block.size] = level_blocks[level].block_cells[stitch_index];
+						master_block.size ++;
+					}
+
+					level --;
+					printf("back From Block\n");
 				}else{
 					ERROR(17);
 				}
@@ -215,11 +270,13 @@ void PROCDEC(){
 				ERROR(29);
 			}
 		}else{
+			printf("This one!\n");
 			ERROR(4);
 		}
 	}while(token == 18);
-	get_token();
-
+	if(token != 21){
+		get_token();
+	}
 	return;
 }
 
@@ -228,6 +285,7 @@ void STATEMENT(){
 	if(token == 2){
 		f_ident();
 	}else if(token == 27){
+		printf("calling call\n");
 		f_call();
 	}else if(token == 21){
 		f_begin();
@@ -249,6 +307,7 @@ void STATEMENT(){
 void f_ident(){
 	printf("Got into f_ident\n");
 	struct symbol sym;
+	struct cell sto_cell;
 	int sym_index;
 	sym.name = get_name();
 	if(sym.name != NULL){
@@ -258,8 +317,13 @@ void f_ident(){
 			if(token == 20){
 				get_token();
 				EXPRESSION();
-
-				//>>>>>>>>>>>>>>>>>>>>>>>>>>>>need to do something here!
+				//create code to store cell
+				sto_cell.op = 4;
+				sto_cell.l = (level - symbol_table[sym_index].level);
+				sto_cell.m = symbol_table[sym_index].addr;
+				//put cell in appropriate cell_block
+				level_blocks[level].block_cells[level_blocks[level].size] = sto_cell;
+				level_blocks[level].size ++;
 
 			}else{ERROR(13);}
 		}else{ERROR(11);}
@@ -270,6 +334,7 @@ void f_ident(){
 
 void f_call(){
 	struct symbol sym;
+	struct cell cal_cell;
 	int sym_index;
 	get_token();
 	if(token == 2){
@@ -277,9 +342,13 @@ void f_call(){
 		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
-
-				//>>>>>>>>>>>>>>>>>>>>>.need to do something here
-
+				cal_cell.op = 5;
+				cal_cell.l = 0;
+				cal_cell.m = symbol_table[sym_index].addr;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = cal_cell;
+				level_blocks[level].size ++;
+				get_token();
 			}else{ERROR(11);}
 		}else{ERROR(11);}
 	}else{ERROR(14);}
@@ -288,12 +357,31 @@ void f_call(){
 }
 
 void f_begin(){
+	struct cell inc_cell;
+	struct cell opr_cell;
+	printf("in f_begin\n");
+	//create machine code for increment
+	inc_cell.op = 6;
+	inc_cell.l = 0;
+	inc_cell.m = level_addr_index[level];
+	//put cell in appropriate position
+	level_blocks[level].block_cells[level_blocks[level].size] = inc_cell;
+	level_blocks[level].size ++;
+
 	do{
 		get_token();
 		STATEMENT();
 	}while(token == 18);
+	printf("leaving f_begin\n");
 	if(token == 22){
 		get_token();
+		opr_cell.op = 2;
+		opr_cell.l = 0;
+		opr_cell.m = 0;
+		//put cell in appropriate position
+		level_blocks[level].block_cells[level_blocks[level].size] = opr_cell;
+		level_blocks[level].size ++;
+
 		return;
 	}else{ERROR(30);}
 
@@ -433,6 +521,7 @@ void TERM(){
 
 void FACTOR(){
 	struct symbol sym;
+	struct cell this_cell;
 	int sym_index;
 	
 	if(token == 2){
@@ -440,8 +529,17 @@ void FACTOR(){
 		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
-
-				//>>>>>>>>>>>>>>>>>>>need to do something here
+				//get symbol info
+				sym = symbol_table[sym_index];
+				printf("Found symbol, %s, %d, %d, %d\n", sym.name, sym.level, sym.val, sym.addr);
+				//create new cell with proper info
+				this_cell.op = 1;
+				this_cell.l = 0;
+				this_cell.m = sym.val;
+				//put cell in appropriate cell_block
+				level_blocks[level].block_cells[level_blocks[level].size] = this_cell;
+				level_blocks[level].size ++;
+				
 
 			}else{ERROR(11);}
 		}else{ERROR(11);}
@@ -449,8 +547,13 @@ void FACTOR(){
 		sym.val = get_num();
 		if(!isalpha(sym.val)){
 			printf("Got number! %d\n", sym.val);
-
-			//>>>>>>>>>>>>>>>>>>>>>>>need to do something here
+			//input number into code list
+			this_cell.op = 1;
+			this_cell.l = 0;
+			this_cell.m = sym.val;
+			//put cell in appropriate cell_block
+			level_blocks[level].block_cells[level_blocks[level].size] = this_cell;
+			level_blocks[level].size ++;
 
 		}else{ERROR(2);}
 	}else if(token == 15){
@@ -636,11 +739,40 @@ void table_insert(struct symbol sym){
 
 int find_ident(char* id){
 	int i;
+	int maybe = -1;
 	for(i = 0; i < table_index; i ++){
 		if(strcmp(id, symbol_table[i].name) == 0){
-			return i;
+			if(symbol_table[i].level == level){
+				return i;
+			}else{
+				maybe = i;
+			}
 		}
 	}
 
-	return -1;
+	return maybe;
+}
+
+int get_table_addr(){
+	int i = -1;
+	
+	i = level_addr_index[level] ++;
+	return i;
+}
+
+void print_code_arrays(){
+	int i, j;
+	for(i = 1; i > -1; i --){
+		printf("Code Block %d:\n\n", i);
+		for(j = 0; j < level_blocks[i].size; j++){
+			printf("%d %d %d\n", level_blocks[i].block_cells[j].op,
+									level_blocks[i].block_cells[j].l,
+									level_blocks[i].block_cells[j].m);
+		}
+	}
+
+	printf("\nMaster Block: \n\n");
+	for(j = 0; j < master_block.size; j ++){
+		printf("%d %d %d\n", master_block.block_cells[j].op, master_block.block_cells[j].l, master_block.block_cells[j].m);
+	}
 }
