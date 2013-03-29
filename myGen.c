@@ -74,17 +74,23 @@ static FILE* outFile;
 static struct symbol symbol_table[500];
 static int table_index = 0;
 static int level = 0;
-static struct code_block level_blocks[5];
+static struct code_block level_blocks[3];
+static int jpc_holder[10];
+static int jpc_holder_index = 0;
 static struct code_block master_block;
 static int level_addr_index[3];
 
 int main(void){
 	//declare variables for generator
-	level_blocks[0].size = 0;
-	level_blocks[1].size = 0;
-	level_blocks[2].size = 0;
-	level_blocks[3].size = 0;
-	level_blocks[4].size = 0;
+	int i;
+	for (i = 0; i < 3; i ++){
+		level_blocks[i].size = 0;
+	}
+
+	for (i = 0; i < 10; i ++){
+		jpc_blocks[i].size = 0;
+	}
+
 	master_block.size = 0;
 	level_addr_index[0] = 4;
 	level_addr_index[1] = 4;
@@ -389,26 +395,53 @@ void f_begin(){
 }
 
 void f_if(){
+	struct cell if_cell;
+	if_cell.op = 8;
+	if_cell.l = 0;
 	get_token();
 	CONDITION();
 	if(token == 24){
 		get_token();
+		//put empty jpc cell at this level and remeber index
+		jpc_holder[jpc_holder_index] = level_blocks[level].size;
+		jpc_holder_index ++;
+		//place unfinished jump conditional cell in place
+		level_blocks[level].block_cells[level_blocks[level].size] = if_cell;
+		level_blocks[level].size ++;
 		STATEMENT();
+		//back from statement block, must update jump condition m value
+		level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
+		jpc_holder_index --;
 	}else{ERROR(16);}
+
+	return;
 }
 
 void f_while(){
+	struct cell while_cell;
+	while_cell.op = 8;
+	while_cell.l = 0;
 	get_token();
 	CONDITION();
 	if(token == 26){
 		get_token();
+		//put empty jpc cell at this level and remeber index
+		jpc_holder[jpc_holder_index] = level_blocks[level].size;
+		jpc_holder_index ++;
+		//place unfinished jump conditional cell in place
+		level_blocks[level].block_cells[level_blocks[level].size] = while_cell;
+		level_blocks[level].size ++;
 		STATEMENT();
+		//back from statement block, must update jump condition m value
+		level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
+		jpc_holder_index --;
 	}else{ERROR(18);}
 
 	return;
 }
 
 void f_read(){
+	struct cell read_cell;
 	struct symbol sym;
 	int sym_index;
 	get_token();
@@ -418,6 +451,12 @@ void f_read(){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
 				//need to do something here
+				read_cell.op = 10;
+				read_cell.l = 0;
+				read_cell.m = 2;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = read_cell;
+				level_blocks[level].size ++;
 			}else{ERROR(11);}
 		}else{ERROR(11);}
 	}else{ERROR(29);}
@@ -426,6 +465,7 @@ void f_read(){
 }
 
 void f_write(){
+	struct cell wrt_cell;
 	struct symbol sym;
 	int sym_index;
 	get_token();
@@ -435,6 +475,12 @@ void f_write(){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
 				//need to do something here
+				wrt_cell.op = 9;
+				wrt_cell.l = 0;
+				wrt_cell.m = 1;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = wrt_cell;
+				level_blocks[level].size ++;
 			}else{ERROR(11);}
 		}else{ERROR(11);}
 	}else{ERROR(29);}
