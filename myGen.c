@@ -79,6 +79,7 @@ static int jpc_holder[10];
 static int jpc_holder_index = 0;
 static struct code_block master_block;
 static int level_addr_index[3];
+static int level_offset = 0;
 
 int main(void){
 	//declare variables for generator
@@ -87,9 +88,6 @@ int main(void){
 		level_blocks[i].size = 0;
 	}
 
-	for (i = 0; i < 10; i ++){
-		jpc_blocks[i].size = 0;
-	}
 
 	master_block.size = 0;
 	level_addr_index[0] = 4;
@@ -111,7 +109,11 @@ int main(void){
 		master_block.block_cells[level].m = master_block.size;
 
 		//stitch code block from this level into master
+		level_offset = master_block.size;
 		for(stitch_index = 0; stitch_index < level_blocks[level].size; stitch_index ++){
+			if(level_blocks[level].block_cells[stitch_index].op == 8){
+				level_blocks[level].block_cells[stitch_index].m += level_offset;
+			}
 			master_block.block_cells[master_block.size] = level_blocks[level].block_cells[stitch_index];
 			master_block.size ++;
 		}
@@ -262,7 +264,11 @@ void PROCDEC(){
 					master_block.block_cells[level].m = master_block.size;
 
 					//stitch code block from this level into master
+					level_offset = master_block.size;
 					for(stitch_index = 0; stitch_index < level_blocks[level].size; stitch_index ++){
+						if(level_blocks[level].block_cells[stitch_index].op == 8){
+							level_blocks[level].block_cells[stitch_index].m += level_offset;
+						}
 						master_block.block_cells[master_block.size] = level_blocks[level].block_cells[stitch_index];
 						master_block.size ++;
 					}
@@ -495,11 +501,15 @@ void f_empty(){
 }
 
 void CONDITION(){
+	struct cell rel_cell;
 	if(token == 8){
 		get_token();
 		EXPRESSION();
-
-		//>>>>>>>>>>>>>>>>>>>do something
+		rel_cell.op = 2;
+		rel_cell.l = 0;
+		rel_cell.m = 6;
+		level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+		level_blocks[level].size ++;		
 
 	}else{
 		get_token();
@@ -876,12 +886,14 @@ int get_table_addr(){
 
 void print_code_arrays(){
 	int i, j;
-	for(i = 1; i > -1; i --){
-		printf("Code Block %d:\n\n", i);
-		for(j = 0; j < level_blocks[i].size; j++){
-			printf("%d %d %d\n", level_blocks[i].block_cells[j].op,
-									level_blocks[i].block_cells[j].l,
-									level_blocks[i].block_cells[j].m);
+	for(i = 2; i > -1; i --){
+		if(level_blocks[i].size > 0){
+			printf("Code Block %d:\n\n", i);
+			for(j = 0; j < level_blocks[i].size; j++){
+				printf("%d %d %d\n", level_blocks[i].block_cells[j].op,
+										level_blocks[i].block_cells[j].l,
+										level_blocks[i].block_cells[j].m);
+			}
 		}
 	}
 
