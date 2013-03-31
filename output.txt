@@ -3,8 +3,11 @@ const n = 13;
 int i;
 begin
 	i := 3;
-	if i = 3 then
-		i := 4;
+	while i = 3 do
+		begin
+			write i;
+			i := 4;
+		end
 end.
 
 Lexeme Table:
@@ -22,17 +25,22 @@ i			2
 :=			20
 3			3
 ;			18
-if			23
+while			25
 i			2
 =			9
 3			3
-then			24
+do			26
+begin			21
+write			31
+i			2
+;			18
 i			2
 :=			20
 4			3
 ;			18
 end			22
+end			22
 .			19
 
 Lexeme List:
- 28 2 n 9 3 13 18 29 2 i 18 21 2 i 20 3 3 18 23 2 i 9 3 3 24 2 i 20 3 4 18 22 19
+ 28 2 n 9 3 13 18 29 2 i 18 21 2 i 20 3 3 18 25 2 i 9 3 3 26 21 31 2 i 18 2 i 20 3 4 18 22 22 19

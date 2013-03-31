@@ -2,6 +2,9 @@ const n = 13;
 int i;
 begin
 	i := 3;
-	if i = 3 then
-		i := 4;
+	while i = 3 do
+		begin
+			write i;
+			i := 4;
+		end
 end.

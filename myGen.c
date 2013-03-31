@@ -80,6 +80,7 @@ static int jpc_holder_index = 0;
 static struct code_block master_block;
 static int level_addr_index[3];
 static int level_offset = 0;
+static int jmp_holder[10];
 
 int main(void){
 	//declare variables for generator
@@ -111,7 +112,7 @@ int main(void){
 		//stitch code block from this level into master
 		level_offset = master_block.size;
 		for(stitch_index = 0; stitch_index < level_blocks[level].size; stitch_index ++){
-			if(level_blocks[level].block_cells[stitch_index].op == 8){
+			if(level_blocks[level].block_cells[stitch_index].op == 8 || level_blocks[level].block_cells[stitch_index].op == 7){
 				level_blocks[level].block_cells[stitch_index].m += level_offset;
 			}
 			master_block.block_cells[master_block.size] = level_blocks[level].block_cells[stitch_index];
@@ -123,11 +124,12 @@ int main(void){
 			ERROR(9);
 		}
 	}//end file
+
+	print_code_arrays();
 	
 	fclose(inFile);
 	fclose(outFile);
-
-	print_code_arrays();
+	
 }//end main
 
 void BLOCK(){
@@ -153,8 +155,26 @@ void BLOCK(){
 			PROCDEC();
 		}
 	}
+	struct cell inc_cell;
+	struct cell opr_cell;
+	printf("in f_begin\n");
+	//create machine code for increment
+	inc_cell.op = 6;
+	inc_cell.l = 0;
+	inc_cell.m = level_addr_index[level];
+	printf("set increament level to %d at level %d\n", inc_cell.m, level);
+	//put cell in appropriate position
+	level_blocks[level].block_cells[level_blocks[level].size] = inc_cell;
+	level_blocks[level].size ++;
 	
 	STATEMENT();
+
+	opr_cell.op = 2;
+	opr_cell.l = 0;
+	opr_cell.m = 0;
+	//put cell in appropriate position
+	level_blocks[level].block_cells[level_blocks[level].size] = opr_cell;
+	level_blocks[level].size ++;
 
 	return;
 }//end Block
@@ -369,16 +389,7 @@ void f_call(){
 }
 
 void f_begin(){
-	struct cell inc_cell;
-	struct cell opr_cell;
-	printf("in f_begin\n");
-	//create machine code for increment
-	inc_cell.op = 6;
-	inc_cell.l = 0;
-	inc_cell.m = level_addr_index[level];
-	//put cell in appropriate position
-	level_blocks[level].block_cells[level_blocks[level].size] = inc_cell;
-	level_blocks[level].size ++;
+	
 
 	do{
 		get_token();
@@ -387,13 +398,6 @@ void f_begin(){
 	printf("leaving f_begin\n");
 	if(token == 22){
 		get_token();
-		opr_cell.op = 2;
-		opr_cell.l = 0;
-		opr_cell.m = 0;
-		//put cell in appropriate position
-		level_blocks[level].block_cells[level_blocks[level].size] = opr_cell;
-		level_blocks[level].size ++;
-
 		return;
 	}else{ERROR(30);}
 
@@ -416,8 +420,8 @@ void f_if(){
 		level_blocks[level].size ++;
 		STATEMENT();
 		//back from statement block, must update jump condition m value
-		level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
 		jpc_holder_index --;
+		level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
 	}else{ERROR(16);}
 
 	return;
@@ -427,6 +431,8 @@ void f_while(){
 	struct cell while_cell;
 	while_cell.op = 8;
 	while_cell.l = 0;
+	//mark the point to jump back to at the end of every while termination
+	jmp_holder[jpc_holder_index] = level_blocks[level].size;
 	get_token();
 	CONDITION();
 	if(token == 26){
@@ -438,9 +444,16 @@ void f_while(){
 		level_blocks[level].block_cells[level_blocks[level].size] = while_cell;
 		level_blocks[level].size ++;
 		STATEMENT();
+		//back from statement block, jump back to while condition
+		jpc_holder_index --;
+		struct cell jmp_cell;
+		jmp_cell.op = 7;
+		jmp_cell.l = 0;
+		jmp_cell.m = jmp_holder[jpc_holder_index];
+		level_blocks[level].block_cells[level_blocks[level].size] = jmp_cell;
+		level_blocks[level].size ++;
 		//back from statement block, must update jump condition m value
 		level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
-		jpc_holder_index --;
 	}else{ERROR(18);}
 
 	return;
@@ -448,6 +461,7 @@ void f_while(){
 
 void f_read(){
 	struct cell read_cell;
+	struct cell lod_cell;
 	struct symbol sym;
 	int sym_index;
 	get_token();
@@ -456,13 +470,21 @@ void f_read(){
 		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
-				//need to do something here
+				//load address to stack
+				lod_cell.op = 3;
+				lod_cell.l = level - symbol_table[sym_index].level;
+				lod_cell.m = symbol_table[sym_index].addr;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = lod_cell;
+				level_blocks[level].size ++;
+				//send read command
 				read_cell.op = 10;
 				read_cell.l = 0;
 				read_cell.m = 2;
 				//put cell in appropriate position
 				level_blocks[level].block_cells[level_blocks[level].size] = read_cell;
 				level_blocks[level].size ++;
+				get_token();
 			}else{ERROR(11);}
 		}else{ERROR(11);}
 	}else{ERROR(29);}
@@ -472,6 +494,7 @@ void f_read(){
 
 void f_write(){
 	struct cell wrt_cell;
+	struct cell lod_cell;
 	struct symbol sym;
 	int sym_index;
 	get_token();
@@ -480,13 +503,21 @@ void f_write(){
 		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
-				//need to do something here
+				//load address to stack
+				lod_cell.op = 3;
+				lod_cell.l = level - symbol_table[sym_index].level;
+				lod_cell.m = symbol_table[sym_index].addr;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = lod_cell;
+				level_blocks[level].size ++;
+				//send write command
 				wrt_cell.op = 9;
 				wrt_cell.l = 0;
 				wrt_cell.m = 1;
 				//put cell in appropriate position
 				level_blocks[level].block_cells[level_blocks[level].size] = wrt_cell;
 				level_blocks[level].size ++;
+				get_token();
 			}else{ERROR(11);}
 		}else{ERROR(11);}
 	}else{ERROR(29);}
@@ -881,6 +912,7 @@ int get_table_addr(){
 	int i = -1;
 	
 	i = level_addr_index[level] ++;
+	printf("Increased increment to %d\n", i);
 	return i;
 }
 
@@ -900,5 +932,6 @@ void print_code_arrays(){
 	printf("\nMaster Block: \n\n");
 	for(j = 0; j < master_block.size; j ++){
 		printf("%d %d %d\n", master_block.block_cells[j].op, master_block.block_cells[j].l, master_block.block_cells[j].m);
+		fprintf(outFile, "%d %d %d\n", master_block.block_cells[j].op, master_block.block_cells[j].l, master_block.block_cells[j].m);
 	}
 }
