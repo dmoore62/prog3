@@ -10,7 +10,7 @@
 struct instruction{
        int line; 
        int op;
-       char *op_code;
+       char *op_code;// = (char *)malloc(3 * sizeof(char));
        int l;
        int m;       
 };
@@ -21,13 +21,14 @@ int base(int l, int base, int* s);
 int main(void){
 //main declarations
        FILE* fpin = fopen("file.in", "r");
-       FILE* fpout = fopen("VMoutput.txt", "w");
+       FILE* fpout = fopen("output.txt", "w");
        struct instruction instr_ary[MAX_CODE_LENGTH];
 //main statements    
        //fill array of structs
        int struct_index = 0;
        int i, j;
        while(!feof(fpin)){
+          printf("came back!\n");
           fscanf(fpin, "%d", &i);
           instr_ary[struct_index].op = i;
           fscanf(fpin, "%d", &i);
@@ -68,6 +69,8 @@ int main(void){
               case 10:
                 instr_ary[struct_index].op_code = "SIO";
                 break;
+              default:
+              break;
 
           }//end switch
           struct_index ++;                
@@ -77,6 +80,7 @@ int main(void){
        fprintf(fpout, "Line\tOP\t\tL\tM\n");
        int print_index;
        for(print_index = 0; print_index < struct_index - 1; print_index ++){
+                printf("printed\n");
                fprintf(fpout, "%d\t\t%s\t\t%d\t%d\n", print_index, instr_ary[print_index].op_code, instr_ary[print_index].l, instr_ary[print_index].m);
        }//end print for
        
@@ -108,7 +112,7 @@ int main(void){
        
        //begin fetch - execution process
        while(bp != 0){
-
+        printf("executed\n");
         //fetch
         int fetch_instr = 0;
         while(instr_ary[fetch_instr].line != pc) fetch_instr++;
@@ -327,6 +331,7 @@ int main(void){
         }//end switch
 
         //print stack
+        printf("Got Here %d\n", bp);
          fprintf(fpVMout, "%d\t%d\t%d\t", pc, bp, sp);
 
          if(bp != 0){
@@ -343,6 +348,7 @@ int main(void){
           
 
          }else{
+          printf("Gets here\n");
           fprintf(fpVMout, "\n");
          }//end bp if
 
