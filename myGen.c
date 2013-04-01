@@ -94,7 +94,7 @@ int main(void){
 	level_addr_index[0] = 4;
 	level_addr_index[1] = 4;
 	level_addr_index[2] = 4;
-	inFile = fopen("quick_debug.txt", "r");
+	inFile = fopen("CG_out.txt", "r");
 	outFile = fopen("toVM.txt", "w");
 	int stitch_index;
 
@@ -129,7 +129,7 @@ int main(void){
 	
 	fclose(inFile);
 	fclose(outFile);
-	
+
 }//end main
 
 void BLOCK(){
@@ -196,14 +196,14 @@ void CONSTDEC(){
 					if(token == 3){
 						sym.val = get_num();
 						printf("%s, %d, %d\n", sym.name, sym.val, sym.level);
-						if(!isalpha(sym.val)){
+						//if(!isalpha(sym.val)){
 							table_insert(sym);
 							sym.name = NULL;
 							sym.val = (int)NULL;
 							get_token();
-						}else{
-							ERROR(2);
-						}
+						//}else{
+						//	ERROR(2);
+						//}
 					}else{
 						ERROR(2);
 					}
@@ -700,7 +700,7 @@ void FACTOR(){
 		}else{ERROR(11);}
 	}else if(token == 3){
 		sym.val = get_num();
-		if(!isalpha(sym.val)){
+		//if(!isalpha(sym.val)){
 			printf("Got number! %d\n", sym.val);
 			//input number into code list
 			lit_cell.op = 1;
@@ -710,7 +710,7 @@ void FACTOR(){
 			level_blocks[level].block_cells[level_blocks[level].size] = lit_cell;
 			level_blocks[level].size ++;
 
-		}else{ERROR(2);}
+		//}else{ERROR(2);}
 	}else if(token == 15){
 		get_token();
 		EXPRESSION();
