@@ -4,6 +4,7 @@ HW 3 - 3/31/2013
 for COP3402
 README File
 
+Folder run_prog3/
 Included Files:
 
 myGen.c - Code generator

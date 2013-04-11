@@ -1,77 +1,280 @@
 Source Code:
-const n = 13;
-int i, h;
-procedure sub;
-	const k = 7;
-	int j, h;
-	begin
-		j := n;
-		i := 1;
-		h := k;
-	end;
+const m = 7, n = 85;
+int x,y,z,q,r;
+procedure multiply;
+    int a,b;
+begin a := x; b:= y; z:=0;
+    while b > 0 do
+    begin
+        if odd b then z := z + a;
+        a := 2*a; b := b/2;
+        end
+end;
+
+procedure divide;
+    int w;
+begin r := x; q := 0; w := y;
+    while w <= r do w := 2*w;
+    while w > y do
+        begin q := 2*q; w := w/2;
+            if w =r then
+               begin r := r-w; q := q+1;
+               end
+        end
+end;
+
+procedure gcd;
+    int f,g;
+begin f := x; g := y;
+    while f <> g do
+        begin if f < g then g := g-f;
+            if g < f then f := f-g;
+         end;
+    z := f
+end;
+
 begin
-	i := 3;
-	h := 0;
-	call sub;
+    x := m ; y:= n ;  call multiply;
+    x := 25; y := 3; call divide;
+    x := 84; y:= 36; call gcd;
 end.
+
 
 Lexeme Table:
 lexeme		token type
 const			28
-n			2
-=			9
-13			3
-;			18
-int			29
-i			2
-,			17
-h			2
-;			18
-procedure		30
-sub			2
-;			18
-const			28
-k			2
+m			2
 =			9
 7			3
+,			17
+n			2
+=			9
+85			3
 ;			18
 int			29
-j			2
+x			2
 ,			17
-h			2
+y			2
+,			17
+z			2
+,			17
+q			2
+,			17
+r			2
+;			18
+procedure		30
+multiply			2
+;			18
+int			29
+a			2
+,			17
+b			2
 ;			18
 begin			21
-j			2
+a			2
 :=			20
-n			2
+x			2
 ;			18
-i			2
+b			2
 :=			20
-1			3
+y			2
 ;			18
-h			2
-:=			20
-k			2
-;			18
-end			22
-;			18
-begin			21
-i			2
-:=			20
-3			3
-;			18
-h			2
+z			2
 :=			20
 0			3
 ;			18
+while			25
+b			2
+>			13
+0			3
+do			26
+begin			21
+if			23
+odd			8
+b			2
+then			24
+z			2
+:=			20
+z			2
++			4
+a			2
+;			18
+a			2
+:=			20
+2			3
+*			6
+a			2
+;			18
+b			2
+:=			20
+b			2
+/			7
+2			3
+;			18
+end			22
+end			22
+;			18
+procedure		30
+divide			2
+;			18
+int			29
+w			2
+;			18
+begin			21
+r			2
+:=			20
+x			2
+;			18
+q			2
+:=			20
+0			3
+;			18
+w			2
+:=			20
+y			2
+;			18
+while			25
+w			2
+<=			12
+r			2
+do			26
+w			2
+:=			20
+2			3
+*			6
+w			2
+;			18
+while			25
+w			2
+>			13
+y			2
+do			26
+begin			21
+q			2
+:=			20
+2			3
+*			6
+q			2
+;			18
+w			2
+:=			20
+w			2
+/			7
+2			3
+;			18
+if			23
+w			2
+=			9
+r			2
+then			24
+begin			21
+r			2
+:=			20
+r			2
+-			5
+w			2
+;			18
+q			2
+:=			20
+q			2
++			4
+1			3
+;			18
+end			22
+end			22
+end			22
+;			18
+procedure		30
+gcd			2
+;			18
+int			29
+f			2
+,			17
+g			2
+;			18
+begin			21
+f			2
+:=			20
+x			2
+;			18
+g			2
+:=			20
+y			2
+;			18
+while			25
+f			2
+<>			10
+g			2
+do			26
+begin			21
+if			23
+f			2
+<			11
+g			2
+then			24
+g			2
+:=			20
+g			2
+-			5
+f			2
+;			18
+if			23
+g			2
+<			11
+f			2
+then			24
+f			2
+:=			20
+f			2
+-			5
+g			2
+;			18
+end			22
+;			18
+z			2
+:=			20
+f			2
+end			22
+;			18
+begin			21
+x			2
+:=			20
+m			2
+;			18
+y			2
+:=			20
+n			2
+;			18
 call			27
-sub			2
+multiply			2
+;			18
+x			2
+:=			20
+25			3
+;			18
+y			2
+:=			20
+3			3
+;			18
+call			27
+divide			2
+;			18
+x			2
+:=			20
+84			3
+;			18
+y			2
+:=			20
+36			3
+;			18
+call			27
+gcd			2
 ;			18
 end			22
 .			19
 
 Lexeme List:
- 28 2 n 9 3 13 18 29 2 i 17 2 h 18 30 2 sub 18 28 2 k 9 3 7 18 29 2 j 17 2 h 18 21 2 j 20 2 n 18 2 i 20 3 1 18 2 h 20 2 k 18 22 18 21 2 i 20 3 3 18 2 h 20 3 0 18 27 2 sub 18 22 19
+ 28 2 m 9 3 7 17 2 n 9 3 85 18 29 2 x 17 2 y 17 2 z 17 2 q 17 2 r 18 30 2 multiply 18 29 2 a 17 2 b 18 21 2 a 20 2 x 18 2 b 20 2 y 18 2 z 20 3 0 18 25 2 b 13 3 0 26 21 23 8 2 b 24 2 z 20 2 z 4 2 a 18 2 a 20 3 2 6 2 a 18 2 b 20 2 b 7 3 2 18 22 22 18 30 2 divide 18 29 2 w 18 21 2 r 20 2 x 18 2 q 20 3 0 18 2 w 20 2 y 18 25 2 w 12 2 r 26 2 w 20 3 2 6 2 w 18 25 2 w 13 2 y 26 21 2 q 20 3 2 6 2 q 18 2 w 20 2 w 7 3 2 18 23 2 w 9 2 r 24 21 2 r 20 2 r 5 2 w 18 2 q 20 2 q 4 3 1 18 22 22 22 18 30 2 gcd 18 29 2 f 17 2 g 18 21 2 f 20 2 x 18 2 g 20 2 y 18 25 2 f 10 2 g 26 21 23 2 f 11 2 g 24 2 g 20 2 g 5 2 f 18 23 2 g 11 2 f 24 2 f 20 2 f 5 2 g 18 22 18 2 z 20 2 f 22 18 21 2 x 20 2 m 18 2 y 20 2 n 18 27 2 multiply 18 2 x 20 3 25 18 2 y 20 3 3 18 27 2 divide 18 2 x 20 3 84 18 2 y 20 3 36 18 27 2 gcd 18 22 19
 
 The symbolic representation of the Lexeme List:
-constsym identsym n eqsym numbersym 13 semicolonsym intsym identsym i commasym identsym h semicolonsym procsym identsym sub semicolonsym constsym identsym k eqsym numbersym 7 semicolonsym intsym identsym j commasym identsym h semicolonsym beginsym identsym j becomessym identsym n semicolonsym identsym i becomessym numbersym 1 semicolonsym identsym h becomessym identsym k semicolonsym endsym semicolonsym beginsym identsym i becomessym numbersym 3 semicolonsym identsym h becomessym numbersym 0 semicolonsym callsym identsym sub semicolonsym endsym periodsym 
+constsym identsym m eqsym numbersym 7 commasym identsym n eqsym numbersym 85 semicolonsym intsym identsym x commasym identsym y commasym identsym z commasym identsym q commasym identsym r semicolonsym procsym identsym multiply semicolonsym intsym identsym a commasym identsym b semicolonsym beginsym identsym a becomessym identsym x semicolonsym identsym b becomessym identsym y semicolonsym identsym z becomessym numbersym 0 semicolonsym whilesym identsym b gtrsym numbersym 0 dosym beginsym ifsym oddsym identsym b thensym identsym z becomessym identsym z plussym identsym a semicolonsym identsym a becomessym numbersym 2 multsym identsym a semicolonsym identsym b becomessym identsym b slashsym numbersym 2 semicolonsym endsym endsym semicolonsym procsym identsym divide semicolonsym intsym identsym w semicolonsym beginsym identsym r becomessym identsym x semicolonsym identsym q becomessym numbersym 0 semicolonsym identsym w becomessym identsym y semicolonsym whilesym identsym w leqsym identsym r dosym identsym w becomessym numbersym 2 multsym identsym w semicolonsym whilesym identsym w gtrsym identsym y dosym beginsym identsym q becomessym numbersym 2 multsym identsym q semicolonsym identsym w becomessym identsym w slashsym numbersym 2 semicolonsym ifsym identsym w eqsym identsym r thensym beginsym identsym r becomessym identsym r minussym identsym w semicolonsym identsym q becomessym identsym q plussym numbersym 1 semicolonsym endsym endsym endsym semicolonsym procsym identsym gcd semicolonsym intsym identsym f commasym identsym g semicolonsym beginsym identsym f becomessym identsym x semicolonsym identsym g becomessym identsym y semicolonsym whilesym identsym f neqsym identsym g dosym beginsym ifsym identsym f lessym identsym g thensym identsym g becomessym identsym g minussym identsym f semicolonsym ifsym identsym g lessym identsym f thensym identsym f becomessym identsym f minussym identsym g semicolonsym endsym semicolonsym identsym z becomessym identsym f endsym semicolonsym beginsym identsym x becomessym identsym m semicolonsym identsym y becomessym identsym n semicolonsym callsym identsym multiply semicolonsym identsym x becomessym numbersym 25 semicolonsym identsym y becomessym numbersym 3 semicolonsym callsym identsym divide semicolonsym identsym x becomessym numbersym 84 semicolonsym identsym y becomessym numbersym 36 semicolonsym callsym identsym gcd semicolonsym endsym periodsym 

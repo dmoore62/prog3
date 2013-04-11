@@ -1,0 +1,791 @@
+Got here with 28
+Called Block
+Got here with 2
+Got here!
+Got here with 9
+Got here with 3
+m, 7, 0
+Got here with 17
+Got here with 2
+Got here!
+Got here with 9
+Got here with 3
+n, 85, 0
+Got here with 18
+Got here with 29
+Got here with 2
+Increased increment to 4
+x, 0, 4
+Got here with 17
+Got here with 2
+Increased increment to 5
+y, 0, 5
+Got here with 17
+Got here with 2
+Increased increment to 6
+z, 0, 6
+Got here with 17
+Got here with 2
+Increased increment to 7
+q, 0, 7
+Got here with 17
+Got here with 2
+Increased increment to 8
+r, 0, 8
+Got here with 18
+Got here with 30
+set increament level to 9 at level 0
+Got here with 2
+Got here!
+multiply, 0
+Got here with 18
+Got here with 29
+Called Block
+Got here with 2
+Increased increment to 4
+a, 1, 4
+Got here with 17
+Got here with 2
+Increased increment to 5
+b, 1, 5
+Got here with 18
+Got here with 21
+set increament level to 6 at level 1
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, x, 0, 0, 4
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, y, 0, 0, 5
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 0
+Got here with 18
+Got here with 25
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, b, 1, 2686464, 5
+Got here with 13
+Got here with 3
+Got number! 0
+Got here with 26
+Got here with 21
+Got into STATEMENT
+Got here with 23
+Got into STATEMENT
+Got here with 8
+Got here with 2
+Found symbol, b, 1, 2686464, 5
+Got here with 24
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 6
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, z, 0, 0, 6
+Got here with 4
+Got here with 2
+Found symbol, a, 1, 2686464, 4
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 2
+Got here with 6
+Got here with 2
+Found symbol, a, 1, 2686464, 4
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 4
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, b, 1, 2686464, 5
+Got here with 7
+Got here with 3
+Got number! 2
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 5
+Got here with 22
+Got into STATEMENT
+EMPTY_STRING?
+leaving f_begin
+Got here with 22
+leaving f_begin
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 0
+back From Block
+Got here with 30
+Got here with 2
+Got here!
+divide, 0
+Got here with 18
+Got here with 29
+Called Block
+Got here with 2
+Increased increment to 6
+w, 1, 6
+Got here with 18
+Got here with 21
+set increament level to 7 at level 1
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, x, 0, 0, 4
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 0
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, y, 0, 0, 5
+Got here with 18
+Got here with 25
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, w, 1, 2686464, 6
+Got here with 12
+Got here with 2
+Found symbol, r, 0, 0, 8
+Got here with 26
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 2
+Got here with 6
+Got here with 2
+Found symbol, w, 1, 2686464, 6
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 4
+Got here with 25
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, w, 1, 2686464, 6
+Got here with 13
+Got here with 2
+Found symbol, y, 0, 0, 5
+Got here with 26
+Got here with 21
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 2
+Got here with 6
+Got here with 2
+Found symbol, q, 0, 0, 7
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 4
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, w, 1, 2686464, 6
+Got here with 7
+Got here with 3
+Got number! 2
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 5
+Got here with 23
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, w, 1, 2686464, 6
+Got here with 9
+Got here with 2
+Found symbol, r, 0, 0, 8
+Got here with 24
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 8
+Got here with 21
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, r, 0, 0, 8
+Got here with 5
+Got here with 2
+Found symbol, w, 1, 2686464, 6
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, q, 0, 0, 7
+Got here with 4
+Got here with 3
+Got number! 1
+Got here with 18
+Got here with 22
+Got into STATEMENT
+EMPTY_STRING?
+leaving f_begin
+Got here with 22
+leaving f_begin
+Got here with 22
+leaving f_begin
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 0
+back From Block
+Got here with 30
+Got here with 2
+Got here!
+gcd, 0
+Got here with 18
+Got here with 29
+Called Block
+Got here with 2
+Increased increment to 7
+f, 1, 7
+Got here with 17
+Got here with 2
+Increased increment to 8
+g, 1, 8
+Got here with 18
+Got here with 21
+set increament level to 9 at level 1
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, x, 0, 0, 4
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, y, 0, 0, 5
+Got here with 18
+Got here with 25
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, f, 1, 2686464, 7
+Got here with 10
+Got here with 2
+Found symbol, g, 1, 2686464, 8
+Got here with 26
+Got here with 21
+Got into STATEMENT
+Got here with 23
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, f, 1, 2686464, 7
+Got here with 11
+Got here with 2
+Found symbol, g, 1, 2686464, 8
+Got here with 24
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, g, 1, 2686464, 8
+Got here with 5
+Got here with 2
+Found symbol, f, 1, 2686464, 7
+Got here with 18
+Got here with 23
+Got into STATEMENT
+Got here with 2
+Got here with 2
+Found symbol, g, 1, 2686464, 8
+Got here with 11
+Got here with 2
+Found symbol, f, 1, 2686464, 7
+Got here with 24
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, f, 1, 2686464, 7
+Got here with 5
+Got here with 2
+Found symbol, g, 1, 2686464, 8
+Got here with 18
+Got here with 22
+Got into STATEMENT
+EMPTY_STRING?
+leaving f_begin
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, f, 1, 2686464, 7
+Got here with 22
+leaving f_begin
+Got here with 18
+EMIT>>>>>>>>>>>
+Level: 1
+2, 0, 0
+back From Block
+Got here with 21
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, m, 0, 7, 0
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, n, 0, 85, 0
+Got here with 18
+Got here with 27
+Got into STATEMENT
+calling call
+Got here with 2
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 25
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 3
+Got here with 18
+Got here with 27
+Got into STATEMENT
+calling call
+Got here with 2
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 84
+Got here with 18
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 3
+Got number! 36
+Got here with 18
+Got here with 27
+Got into STATEMENT
+calling call
+Got here with 2
+Got here with 18
+Got here with 22
+Got into STATEMENT
+EMPTY_STRING?
+leaving f_begin
+Got here with 19
+Got into STATEMENT
+EMIT>>>>>>>>>>>
+Level: 0
+2, 0, 0
+Code Block 1:
+
+6 0 6
+3 1 4
+4 0 4
+3 1 5
+4 0 5
+1 0 0
+4 1 6
+3 0 5
+1 0 0
+2 0 12
+8 0 162
+3 0 5
+2 0 6
+8 0 153
+3 1 6
+3 0 4
+2 0 2
+4 1 6
+1 0 2
+3 0 4
+2 0 4
+4 0 4
+3 0 5
+1 0 2
+2 0 5
+4 0 5
+7 0 7
+2 0 0
+6 0 7
+3 1 4
+4 1 8
+1 0 0
+4 1 7
+3 1 5
+4 0 6
+3 0 6
+3 1 8
+2 0 11
+8 0 177
+1 0 2
+3 0 6
+2 0 4
+4 0 6
+7 0 35
+3 0 6
+3 1 5
+2 0 12
+8 0 202
+1 0 2
+3 1 7
+2 0 4
+4 1 7
+3 0 6
+1 0 2
+2 0 5
+4 0 6
+3 0 6
+3 1 8
+2 0 8
+8 0 201
+3 1 8
+3 0 6
+2 0 3
+4 1 8
+3 1 7
+1 0 1
+2 0 2
+4 1 7
+7 0 44
+2 0 0
+6 0 9
+3 1 4
+4 0 7
+3 1 5
+4 0 8
+3 0 7
+3 0 8
+2 0 9
+8 0 198
+3 0 7
+3 0 8
+2 0 10
+8 0 189
+3 0 8
+3 0 7
+2 0 3
+4 0 8
+3 0 8
+3 0 7
+2 0 10
+8 0 197
+3 0 7
+3 0 8
+2 0 3
+4 0 7
+7 0 75
+3 0 7
+4 1 6
+2 0 0
+Code Block 0:
+
+6 0 9
+1 0 7
+4 0 4
+1 0 85
+4 0 5
+5 0 2
+1 0 25
+4 0 4
+1 0 3
+4 0 5
+5 0 31
+1 0 84
+4 0 4
+1 0 36
+4 0 5
+5 0 102
+2 0 0
+
+Master Block: 
+
+7 0 201
+7 0 102
+6 0 6
+3 1 4
+4 0 4
+3 1 5
+4 0 5
+1 0 0
+4 1 6
+3 0 5
+1 0 0
+2 0 12
+8 0 29
+3 0 5
+2 0 6
+8 0 20
+3 1 6
+3 0 4
+2 0 2
+4 1 6
+1 0 2
+3 0 4
+2 0 4
+4 0 4
+3 0 5
+1 0 2
+2 0 5
+4 0 5
+7 0 7
+2 0 0
+7 0 0
+6 0 6
+3 1 4
+4 0 4
+3 1 5
+4 0 5
+1 0 0
+4 1 6
+3 0 5
+1 0 0
+2 0 12
+8 0 60
+3 0 5
+2 0 6
+8 0 51
+3 1 6
+3 0 4
+2 0 2
+4 1 6
+1 0 2
+3 0 4
+2 0 4
+4 0 4
+3 0 5
+1 0 2
+2 0 5
+4 0 5
+7 0 7
+2 0 0
+6 0 7
+3 1 4
+4 1 8
+1 0 0
+4 1 7
+3 1 5
+4 0 6
+3 0 6
+3 1 8
+2 0 11
+8 0 75
+1 0 2
+3 0 6
+2 0 4
+4 0 6
+7 0 35
+3 0 6
+3 1 5
+2 0 12
+8 0 100
+1 0 2
+3 1 7
+2 0 4
+4 1 7
+3 0 6
+1 0 2
+2 0 5
+4 0 6
+3 0 6
+3 1 8
+2 0 8
+8 0 99
+3 1 8
+3 0 6
+2 0 3
+4 1 8
+3 1 7
+1 0 1
+2 0 2
+4 1 7
+7 0 44
+2 0 0
+7 0 0
+6 0 6
+3 1 4
+4 0 4
+3 1 5
+4 0 5
+1 0 0
+4 1 6
+3 0 5
+1 0 0
+2 0 12
+8 0 162
+3 0 5
+2 0 6
+8 0 153
+3 1 6
+3 0 4
+2 0 2
+4 1 6
+1 0 2
+3 0 4
+2 0 4
+4 0 4
+3 0 5
+1 0 2
+2 0 5
+4 0 5
+7 0 7
+2 0 0
+6 0 7
+3 1 4
+4 1 8
+1 0 0
+4 1 7
+3 1 5
+4 0 6
+3 0 6
+3 1 8
+2 0 11
+8 0 177
+1 0 2
+3 0 6
+2 0 4
+4 0 6
+7 0 35
+3 0 6
+3 1 5
+2 0 12
+8 0 202
+1 0 2
+3 1 7
+2 0 4
+4 1 7
+3 0 6
+1 0 2
+2 0 5
+4 0 6
+3 0 6
+3 1 8
+2 0 8
+8 0 201
+3 1 8
+3 0 6
+2 0 3
+4 1 8
+3 1 7
+1 0 1
+2 0 2
+4 1 7
+7 0 44
+2 0 0
+6 0 9
+3 1 4
+4 0 7
+3 1 5
+4 0 8
+3 0 7
+3 0 8
+2 0 9
+8 0 198
+3 0 7
+3 0 8
+2 0 10
+8 0 189
+3 0 8
+3 0 7
+2 0 3
+4 0 8
+3 0 8
+3 0 7
+2 0 10
+8 0 197
+3 0 7
+3 0 8
+2 0 3
+4 0 7
+7 0 75
+3 0 7
+4 1 6
+2 0 0
+6 0 9
+1 0 7
+4 0 4
+1 0 85
+4 0 5
+5 0 2
+1 0 25
+4 0 4
+1 0 3
+4 0 5
+5 0 31
+1 0 84
+4 0 4
+1 0 36
+4 0 5
+5 0 102
+2 0 0
