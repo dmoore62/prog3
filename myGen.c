@@ -470,19 +470,19 @@ void f_read(){
 		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
-				//load address to stack
-				lod_cell.op = 3;
-				lod_cell.l = level - symbol_table[sym_index].level;
-				lod_cell.m = symbol_table[sym_index].addr;
-				//put cell in appropriate position
-				level_blocks[level].block_cells[level_blocks[level].size] = lod_cell;
-				level_blocks[level].size ++;
 				//send read command
 				read_cell.op = 10;
 				read_cell.l = 0;
 				read_cell.m = 2;
 				//put cell in appropriate position
 				level_blocks[level].block_cells[level_blocks[level].size] = read_cell;
+				level_blocks[level].size ++;
+				//load address to stack
+				lod_cell.op = 4;
+				lod_cell.l = level - symbol_table[sym_index].level;
+				lod_cell.m = symbol_table[sym_index].addr;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = lod_cell;
 				level_blocks[level].size ++;
 				get_token();
 			}else{ERROR(11);}
@@ -617,25 +617,39 @@ void EXPRESSION(){
 	struct cell exp_cell;
 	exp_cell.op = 2;
 	exp_cell.l = 0;
-	/*if(token == 4 || token == 5){
-		get_token();
-	}*/
 
-	do{
-		TERM();
+	if ((token == 4)||(token == 5)){
+	    //if the number is negative
+	    if(token == 5){
+	        exp_cell.m = 1;
+	        //put cell in appropriate cell_block
+	        level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
+			level_blocks[level].size ++;
+	    }
+        get_token();
+        TERM();
+	}
+	else{
+        TERM();
+	}
+
+	while(token == 4 || token == 5){
 		if(token == 4){
+			get_token();
+			TERM();
 			exp_cell.m = 2;
 			//put cell in appropriate cell_block
 			level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
 			level_blocks[level].size ++;
 		}else if(token == 5){
+			get_token();
+			TERM();
 			exp_cell.m = 3;
 			//put cell in appropriate cell_block
 			level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
 			level_blocks[level].size ++;
 		}
-		//get_token();
-	}while(token == 4 || token == 5);
+	}//end while
 
 	return;
 }
