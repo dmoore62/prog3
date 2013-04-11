@@ -1,0 +1,35 @@
+Got here with 29
+Called Block
+Got here with 2
+Increased increment to 4
+f, 0, 4
+Got here with 17
+Got here with 2
+Increased increment to 5
+n, 0, 5
+Got here with 18
+Got here with 30
+Got here with 2
+Got here!
+fact, 0
+Got here with 18
+Got here with 29
+Called Block
+Got here with 2
+Increased increment to 4
+ans1, 1, 4
+Got here with 18
+Got here with 21
+in f_begin
+set increament level to 5 at level 1
+Got into STATEMENT
+Got here with 2
+Got into STATEMENT
+Got into f_ident
+Got here with 20
+Got here with 2
+Found symbol, n, 0, -1217349984, 5
+Got here with 18
+Got here with 2
+leaving f_begin
+ERROR #30, 'End' Expected

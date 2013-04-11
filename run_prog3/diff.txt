@@ -1,0 +1,964 @@
+#include <stdio.h>					      |	#include <stdio.h>								
+#include <stdlib.h>					      |	#include <stdlib.h>								
+#include <string.h>					      |	#include <string.h>								
+#include <ctype.h>					      |	#include <ctype.h>								
+							      |									
+#define MAX_STACK_HEIGHT 2000				      |	#define MAX_STACK_HEIGHT 2000								
+#define MAX_CODE_LENGTH 500				      |	#define MAX_CODE_LENGTH 500								
+#define MAX_LEXI_LEVELS 3				      |	#define MAX_LEXI_LEVELS 3								
+							      |									
+struct cell						      |	struct cell								
+	{						      |		{								
+		int op;					      |			int op;								
+		int l;					      |			int l;								
+		int m;					      |			int m;								
+	};						      |		};								
+							      |									
+struct code_block					      |	struct code_block								
+	{						      |		{								
+		struct cell block_cells[2000];		      |			struct cell block_cells[2000];								
+		int size;				      |			int size;								
+	};						      |		};								
+							      |									
+struct symbol						      |	struct symbol								
+    {							      |	    {								
+	int kind; 		// const = 1, var = 2, proc = |		int kind; 		// const = 1, var = 2, proc =								
+	char* name;	// name up to 11 chars		      |		char* name;	// name up to 11 chars								
+	int val; 		// number (ASCII value)	      |		int val; 		// number (ASCII value)								
+	int level; 		// L level		      |		int level; 		// L level								
+	int addr; 		// M address		      |		int addr; 		// M address								
+	//struct symbols_read_in* next;			      |		//struct symbols_read_in* next;								
+    };							      |	    };								
+							      |									
+//function declarations					      |	//function declarations								
+//for language						      |	//for language								
+void BLOCK();						      |	void BLOCK();								
+void CONSTDEC();					      |	void CONSTDEC();								
+void VARDEC();						      |	void VARDEC();								
+void PROCDEC();						      |	void PROCDEC();								
+void STATEMENT();					      |	void STATEMENT();								
+void CONDITION();					      |	void CONDITION();								
+void REL_OP();						      |	void REL_OP();								
+void EXPRESSION();					      |	void EXPRESSION();								
+void TERM();						      |	void TERM();								
+void FACTOR();						      |	void FACTOR();								
+							      |									
+//secodary syntax					      |	//secodary syntax								
+void f_ident();						      |	void f_ident();								
+void f_call();						      |	void f_call();								
+void f_begin();						      |	void f_begin();								
+void f_if();						      |	void f_if();								
+void f_while();						      |	void f_while();								
+void f_read();						      |	void f_read();								
+void f_write();						      |	void f_write();								
+void f_empty();						      |	void f_empty();								
+							      |									
+//helpers						      |	//helpers								
+void get_token();					      |	void get_token();								
+char* get_name();					      |	char* get_name();								
+int get_num();						      |	int get_num();								
+void ERROR(int i);					      |	void ERROR(int i);								
+void table_insert(struct symbol sym);			      |	void table_insert(struct symbol sym);								
+int find_ident(char* id);				      |	int find_ident(char* id);								
+int get_table_addr();					      |	int get_table_addr();								
+void print_code_arrays();				      |	void print_code_arrays();								
+void print_emit();					      |	void print_emit();								
+							      |									
+//Global Variables					      |	//Global Variables								
+static int token;					      |	static int token;								
+static int errors = 0;					      |	static int errors = 0;								
+static FILE* inFile;					      |	static FILE* inFile;								
+static FILE* outFile;					      |	static FILE* outFile;								
+static struct symbol symbol_table[500];			      |	static struct symbol symbol_table[500];								
+static int table_index = 0;				      |	static int table_index = 0;								
+static int level = 0;					      |	static int level = 0;								
+static struct code_block level_blocks[3];		      |	static struct code_block level_blocks[3];								
+static int jpc_holder[10];				      |	static int jpc_holder[10];								
+static int jpc_holder_index = 0;			      |	static int jpc_holder_index = 0;								
+static struct code_block master_block;			      |	static struct code_block master_block;								
+static int level_addr_index[4];				      |	static int level_addr_index[4];								
+static int level_offset = 0;				      |	static int level_offset = 0;								
+static int jmp_holder[10];				      |	static int jmp_holder[10];								
+							      |	//static struct cell inc_cell;								
+int main(void){						      |									
+	//declare variables for generator		      |	int main(void){								
+	int i;						      |		//declare variables for generator								
+	for (i = 0; i < 4; i ++){			      |		int i;								
+		level_blocks[i].size = 0;		      |		for (i = 0; i < 4; i ++){								
+	}						      |			level_blocks[i].size = 0;								
+							      |		}								
+							      |									
+	master_block.size = 0;				      |									
+	level_addr_index[0] = 4;			      |		master_block.size = 0;								
+	level_addr_index[1] = 4;			      |		level_addr_index[0] = 4;								
+	level_addr_index[2] = 4;			      |		level_addr_index[1] = 4;								
+	level_addr_index[3] = 4;			      |		level_addr_index[2] = 4;								
+	inFile = fopen("CG_out.txt", "r");		      |		level_addr_index[3] = 4;								
+	outFile = fopen("toVM.txt", "w");		      |		inFile = fopen("CG_out.txt", "r");								
+	int stitch_index;				      |		outFile = fopen("toVM.txt", "w");								
+							      |		int stitch_index;								
+	//main statements				      |									
+	if(inFile == NULL){				      |		//main statements								
+		printf("Error opening file\n");		      |		if(inFile == NULL){								
+	}						      |			printf("Error opening file\n");								
+	while(!feof(inFile)){				      |		}								
+							      |		while(!feof(inFile)){								
+		get_token();				      |									
+		BLOCK();				      |			get_token();								
+		//update jump address in master table	      |			BLOCK();								
+		master_block.block_cells[level].m = master_bl |			//update jump address in master table								
+		printf("Update jump code: %d, %d, %d, %d\n",  |			master_block.block_cells[level].m = master_bl								
+							      |									
+		//stitch code block from this level into mast |			//stitch code block from this level into mast								
+		level_offset = master_block.size;	      |			level_offset = master_block.size;								
+		for(stitch_index = 0; stitch_index < level_bl |			for(stitch_index = 0; stitch_index < level_bl								
+			if(level_blocks[level].block_cells[st |				if(level_blocks[level].block_cells[st								
+				level_blocks[level].block_cel |					level_blocks[level].block_cel								
+			}				      |				}								
+			master_block.block_cells[master_block |				master_block.block_cells[master_block								
+			master_block.size ++;		      |				master_block.size ++;								
+		}					      |			}								
+		level --;				      |			level --;								
+							      |									
+		if(token != 19){			      |			if(token != 19){								
+			ERROR(9);			      |				ERROR(9);								
+		}					      |			}								
+	}//end file					      |		}//end file								
+							      |									
+	print_code_arrays();				      |		print_code_arrays();								
+							      |									
+	fclose(inFile);					      |		fclose(inFile);								
+	fclose(outFile);				      |		fclose(outFile);								
+							      |									
+}//end main						      |	}//end main								
+							      |									
+void BLOCK(){						      |	void BLOCK(){								
+	struct cell jmp_cell;				      |		struct cell jmp_cell;								
+	jmp_cell.op = 7;				      |		jmp_cell.op = 7;								
+	jmp_cell.l = 0;					      |		jmp_cell.l = 0;								
+	jmp_cell.m = 0;					      |		jmp_cell.m = 0;								
+	master_block.block_cells[master_block.size] = jmp_cel |		master_block.block_cells[master_block.size] = jmp_cel								
+	master_block.size ++;				      |		master_block.size ++;								
+							      |									
+	printf("Called Block\n");			      |		struct cell inc_cell;								
+	if(token > 27 && token < 31){			      |		struct cell opr_cell;								
+		if(token == 28){			      |	//	//create machine code for increment								
+							      |		inc_cell.op = 6;								
+			CONSTDEC();			      |		inc_cell.l = 0;								
+		}					      |		inc_cell.m = level_addr_index[level]+table_index;								
+		if(token == 29){			      |		printf("set increament level to %d at level %d\n", in								
+							      |		//put cell in appropriate position								
+			VARDEC();			      |		level_blocks[level].block_cells[level_blocks[level].s								
+		}					      |		level_blocks[level].size ++;								
+		if(token == 30){			      |									
+							      |		printf("Called Block\n");								
+			PROCDEC();			      |		if(token > 27 && token < 31){								
+		}					      |			if(token == 28){								
+	}						      |									
+	struct cell inc_cell;				      |				CONSTDEC();								
+	struct cell opr_cell;				      |			}								
+	printf("in f_begin\n");				      |			if(token == 29){								
+	//create machine code for increment		      |									
+	inc_cell.op = 6;				      |				VARDEC();								
+	inc_cell.l = 0;					      |									
+	inc_cell.m = level_addr_index[level];		      |			}								
+	printf("set increament level to %d at level %d\n", in |			if(token == 30){								
+	//put cell in appropriate position		      |									
+	level_blocks[level].block_cells[level_blocks[level].s |				PROCDEC();								
+	level_blocks[level].size ++;			      |									
+							      |			}								
+	STATEMENT();					      |		}								
+							      |									
+	opr_cell.op = 2;				      |									
+	opr_cell.l = 0;					      |		STATEMENT();								
+	opr_cell.m = 0;					      |									
+	//put cell in appropriate position		      |		opr_cell.op = 2;								
+	level_blocks[level].block_cells[level_blocks[level].s |		opr_cell.l = 0;								
+	level_blocks[level].size ++;			      |		opr_cell.m = 0;								
+							      |		//put cell in appropriate position								
+	return;						      |		level_blocks[level].block_cells[level_blocks[level].s								
+}//end Block						      |		level_blocks[level].size ++;								
+							      |									
+void CONSTDEC(){					      |		return;								
+	//printf("Got into CONSTDEC\n");		      |	}//end Block								
+	struct symbol sym;				      |									
+	sym.kind = 1;					      |	void CONSTDEC(){								
+	sym.level = level;				      |		//printf("Got into CONSTDEC\n");								
+	do{						      |		struct symbol sym;								
+		get_token();				      |		sym.kind = 1;								
+		if(token == 2){				      |		sym.level = level;								
+			sym.name = get_name();		      |		do{								
+			if(sym.name != NULL){		      |			get_token();								
+				printf("Got here!\n");	      |			if(token == 2){								
+				get_token();		      |				sym.name = get_name();								
+				if(token == 9){		      |				if(sym.name != NULL){								
+					get_token();	      |					printf("Got here!\n");								
+					if(token == 3){	      |					get_token();								
+						sym.val = get |					if(token == 9){								
+						printf("%s, % |						get_token();								
+						if(!isalpha(s |						if(token == 3){								
+							table |							sym.val = get								
+							sym.n |							printf("%s, %								
+							sym.v |								table								
+							get_t |								sym.n								
+						}else{	      |								sym.v								
+							ERROR |								get_t								
+						}	      |						}else{								
+					}else{		      |							ERROR(2);								
+						ERROR(2);     |						}								
+					}		      |					}else{								
+				}else{			      |						ERROR(3);								
+					ERROR(3);	      |					}								
+				}			      |				}else{								
+			}else{				      |					ERROR(29);								
+				ERROR(29);		      |				}								
+			}				      |			}else{								
+		}else{					      |				ERROR(4);								
+			ERROR(4);			      |			}								
+		}					      |		}while(token == 17);								
+	}while(token == 17);				      |		if(token != 18){								
+	if(token != 18){				      |			ERROR(5);								
+		ERROR(5);				      |		}								
+	}						      |		get_token();								
+	get_token();					      |		return;								
+	return;						      |	}								
+}							      |									
+							      |	void VARDEC(){								
+void VARDEC(){						      |		struct symbol sym;								
+	struct symbol sym;				      |		sym.kind = 2;								
+	sym.kind = 2;					      |		sym.level = level;								
+	sym.level = level;				      |									
+							      |		do{								
+	do{						      |			get_token();								
+		get_token();				      |			if(token == 2){								
+		if(token == 2){				      |				sym.name = get_name();								
+			sym.name = get_name();		      |				sym.addr = get_table_addr();								
+			sym.addr = get_table_addr();	      |				if(sym.name != NULL){								
+			if(sym.name != NULL){		      |					printf("%s, %d, %d\n", sym.na								
+				printf("Insert: %s, %d, %d\n" |					table_insert(sym);								
+				table_insert(sym);	      |					sym.name = NULL;								
+				sym.name = NULL;	      |					get_token();								
+				get_token();		      |				}else{								
+			}else{				      |					ERROR(29);								
+				ERROR(29);		      |				}								
+			}				      |			}else{								
+		}else{					      |				ERROR(4);								
+			ERROR(4);			      |			}								
+		}					      |		}while(token == 17);								
+	}while(token == 17);				      |		if(token != 18){								
+	if(token != 18){				      |			ERROR(5);								
+		ERROR(5);				      |		}								
+	}						      |		get_token();								
+	get_token();					      |		return;								
+	return;						      |	}								
+}							      |									
+							      |	void PROCDEC(){								
+void PROCDEC(){						      |		int sym_index;								
+	int sym_index;					      |		int stitch_index;								
+	int stitch_index;				      |		struct symbol sym;								
+	struct symbol sym;				      |		sym.kind = 3;								
+	sym.kind = 3;					      |		sym.level = level;								
+	sym.level = level;				      |		while(token == 30){								
+	do{						      |			get_token();								
+		get_token();				      |			if(token == 21){								
+		if(token == 21){			      |				break;								
+			break;				      |			}								
+		}					      |			if(token == 2){								
+		if(token == 2){				      |				sym.name = get_name();								
+			sym.name = get_name();		      |				printf("Got here!\n");								
+			printf("Got here!\n");		      |				if(sym.name != NULL){								
+			if(sym.name != NULL){		      |					printf("%s, %d\n", sym.name, 								
+				printf("%s, %d\n", sym.name,  |					table_insert(sym);								
+				table_insert(sym);	      |					sym_index = find_ident(sym.na								
+				sym_index = find_ident(sym.na |					sym.name = NULL;								
+				sym.name = NULL;	      |					level ++;								
+				level ++;		      |					get_token();								
+				get_token();		      |					if(token == 18){								
+				if(token == 18){	      |						get_token();								
+					get_token();	      |						BLOCK();								
+					BLOCK();	      |						//update the address 								
+					//update the address  |						symbol_table[sym_inde								
+					symbol_table[sym_inde |									
+							      |						//update jump address								
+					//update jump address |						master_block.block_ce								
+					master_block.block_ce |									
+							      |						//stitch code block f								
+					//stitch code block f |						level_offset = master								
+					level_offset = level_ |						for(stitch_index = 0;								
+					for(stitch_index = 0; |							if(level_bloc								
+						if(level_bloc |								level								
+							level |							}								
+						}	      |							master_block.								
+						level_blocks[ |							master_block.								
+						level_blocks[ |						}								
+						//master_bloc |									
+						//master_bloc |						level --;								
+					}		      |						printf("back From Blo								
+							      |						if(token == 18){								
+					level --;	      |	                        get_token();								
+					printf("back From Blo |						}else{								
+				}else{			      |	                        ERROR(17);								
+					ERROR(17);	      |	                    }								
+				}			      |					}else{								
+			}else{				      |						ERROR(17);								
+				ERROR(29);		      |					}								
+			}				      |				}else{								
+		}else{					      |					ERROR(29);								
+			printf("This one!\n");		      |				}								
+			ERROR(4);			      |			}else{								
+		}					      |				printf("This one!\n");								
+	}while(token == 18);				      |				ERROR(4);								
+	if(token != 21){				      |			}								
+		get_token();				      |		}								
+	}						      |	//	if(token != 21){								
+	return;						      |	//		get_token();								
+}							      |	//	}								
+							      |	    STATEMENT();								
+void STATEMENT(){					      |		return;								
+	printf("Got into STATEMENT\n");			      |	}								
+	if(token == 2){					      |									
+		f_ident();				      |	void STATEMENT(){								
+	}else if(token == 27){				      |		printf("Got into STATEMENT\n");								
+		printf("calling call\n");		      |		if(token == 2){								
+		f_call();				      |			f_ident();								
+	}else if(token == 21){				      |		}else if(token == 27){								
+		f_begin();				      |			printf("calling call\n");								
+	}else if(token == 23){				      |			f_call();								
+		f_if();					      |		}else if(token == 21){								
+	}else if(token == 25){				      |			f_begin();								
+		f_while();				      |		}else if(token == 23){								
+	}else if(token == 32){				      |			f_if();								
+		f_read();				      |		}else if(token == 25){								
+	}else if(token == 31){				      |			f_while();								
+		f_write();				      |		}else if(token == 32){								
+	}else if(token != 19){				      |			f_read();								
+		f_empty();				      |		}else if(token == 31){								
+	}						      |			f_write();								
+							      |		}else if(token != 19){								
+	return;						      |			f_empty();								
+}							      |		}								
+							      |									
+void f_ident(){						      |		return;								
+	printf("Got into f_ident\n");			      |	}								
+	struct symbol sym;				      |									
+	struct cell sto_cell;				      |	void f_ident(){								
+	int sym_index;					      |		printf("Got into f_ident\n");								
+	sym.name = get_name();				      |		struct symbol sym;								
+	if(sym.name != NULL){				      |		struct cell sto_cell;								
+		sym_index = find_ident(sym.name);	      |		int sym_index;								
+		if(sym_index >= 0){			      |		sym.name = get_name();								
+			get_token();			      |		if(sym.name != NULL){								
+			if(token == 20){		      |			sym_index = find_ident(sym.name);								
+				get_token();		      |			if(sym_index >= 0){								
+				EXPRESSION();		      |				get_token();								
+				//create code to store cell   |				if(token == 20){								
+				sto_cell.op = 4;	      |					get_token();								
+				sto_cell.l = (level - symbol_ |					EXPRESSION();								
+				sto_cell.m = symbol_table[sym |					//create code to store cell								
+				//put cell in appropriate cel |					sto_cell.op = 4;								
+				level_blocks[level].block_cel |					sto_cell.l = (level - symbol_								
+				print_emit();		      |					sto_cell.m = symbol_table[sym								
+				level_blocks[level].size ++;  |					//put cell in appropriate cel								
+							      |					level_blocks[level].block_cel								
+			}else{ERROR(13);}		      |					level_blocks[level].size ++;								
+		}else{ERROR(11);}			      |									
+	}else{ERROR(11);}				      |				}else{ERROR(13);}								
+							      |			}else{ERROR(11);}								
+	return;						      |		}else{ERROR(11);}								
+}							      |									
+							      |		return;								
+void f_call(){						      |	}								
+	struct symbol sym;				      |									
+	struct cell cal_cell;				      |	void f_call(){								
+	int sym_index;					      |		struct symbol sym;								
+	get_token();					      |		struct cell cal_cell;								
+	if(token == 2){					      |		int sym_index;								
+		sym.name = get_name();			      |		get_token();								
+		if(sym.name != NULL){			      |		if(token == 2){								
+			sym_index = find_ident(sym.name);     |			sym.name = get_name();								
+			if(sym_index >= 0){		      |			if(sym.name != NULL){								
+				cal_cell.op = 5;	      |				sym_index = find_ident(sym.name);								
+				cal_cell.l = 0;		      |				if(sym_index >= 0){								
+				cal_cell.m = symbol_table[sym |					cal_cell.op = 5;								
+				//put cell in appropriate pos |					cal_cell.l = 0;								
+				level_blocks[level].block_cel |					cal_cell.m = symbol_table[sym								
+				print_emit();		      |					//put cell in appropriate pos								
+				level_blocks[level].size ++;  |					level_blocks[level].block_cel								
+				get_token();		      |					level_blocks[level].size ++;								
+			}else{ERROR(11);}		      |					get_token();								
+		}else{ERROR(11);}			      |				}else{ERROR(11);}								
+	}else{ERROR(14);}				      |			}else{ERROR(11);}								
+							      |		}else{ERROR(14);}								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void f_begin(){						      |									
+							      |	void f_begin(){								
+							      |									
+	do{						      |									
+		get_token();				      |		do{								
+		STATEMENT();				      |			get_token();								
+	}while(token == 18);				      |			STATEMENT();								
+	printf("leaving f_begin\n");			      |		}while(token == 18);								
+	if(token == 22){				      |		printf("leaving f_begin\n");								
+		get_token();				      |		if(token == 22){								
+		return;					      |			get_token();								
+	}else{ERROR(30);}				      |			return;								
+							      |		}else{ERROR(30);}								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void f_if(){						      |									
+	struct cell if_cell;				      |	void f_if(){								
+	if_cell.op = 8;					      |		struct cell if_cell;								
+	if_cell.l = 0;					      |		if_cell.op = 8;								
+	get_token();					      |		if_cell.l = 0;								
+	CONDITION();					      |		get_token();								
+	if(token == 24){				      |		CONDITION();								
+		get_token();				      |		if(token == 24){								
+		//put empty jpc cell at this level and remebe |			get_token();								
+		jpc_holder[jpc_holder_index] = level_blocks[l |			//put empty jpc cell at this level and remebe								
+		jpc_holder_index ++;			      |			jpc_holder[jpc_holder_index] = level_blocks[l								
+		//place unfinished jump conditional cell in p |			jpc_holder_index ++;								
+		level_blocks[level].block_cells[level_blocks[ |			//place unfinished jump conditional cell in p								
+		level_blocks[level].size ++;		      |			level_blocks[level].block_cells[level_blocks[								
+		STATEMENT();				      |			level_blocks[level].size ++;								
+		//back from statement block, must update jump |			STATEMENT();								
+		jpc_holder_index --;			      |			//back from statement block, must update jump								
+		level_blocks[level].block_cells[jpc_holder[jp |			jpc_holder_index --;								
+	}else{ERROR(16);}				      |			level_blocks[level].block_cells[jpc_holder[jp								
+							      |		}else{ERROR(16);}								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void f_while(){						      |									
+	struct cell while_cell;				      |	void f_while(){								
+	while_cell.op = 8;				      |		struct cell while_cell;								
+	while_cell.l = 0;				      |		while_cell.op = 8;								
+	//mark the point to jump back to at the end of every  |		while_cell.l = 0;								
+	jmp_holder[jpc_holder_index] = level_blocks[level].si |		//mark the point to jump back to at the end of every 								
+	get_token();					      |		jmp_holder[jpc_holder_index] = level_blocks[level].si								
+	CONDITION();					      |		get_token();								
+	if(token == 26){				      |		CONDITION();								
+		get_token();				      |		if(token == 26){								
+		//put empty jpc cell at this level and remebe |			get_token();								
+		jpc_holder[jpc_holder_index] = level_blocks[l |			//put empty jpc cell at this level and remebe								
+		jpc_holder_index ++;			      |			jpc_holder[jpc_holder_index] = level_blocks[l								
+		//place unfinished jump conditional cell in p |			jpc_holder_index ++;								
+		level_blocks[level].block_cells[level_blocks[ |			//place unfinished jump conditional cell in p								
+		level_blocks[level].size ++;		      |			level_blocks[level].block_cells[level_blocks[								
+		STATEMENT();				      |			level_blocks[level].size ++;								
+		//back from statement block, jump back to whi |			STATEMENT();								
+		jpc_holder_index --;			      |			//back from statement block, jump back to whi								
+		struct cell jmp_cell;			      |			jpc_holder_index --;								
+		jmp_cell.op = 7;			      |			struct cell jmp_cell;								
+		jmp_cell.l = 0;				      |			jmp_cell.op = 7;								
+		jmp_cell.m = jmp_holder[jpc_holder_index];    |			jmp_cell.l = 0;								
+		level_blocks[level].block_cells[level_blocks[ |			jmp_cell.m = jmp_holder[jpc_holder_index];								
+		level_blocks[level].size ++;		      |			level_blocks[level].block_cells[level_blocks[								
+		//back from statement block, must update jump |			level_blocks[level].size ++;								
+		level_blocks[level].block_cells[jpc_holder[jp |			//back from statement block, must update jump								
+	}else{ERROR(18);}				      |			level_blocks[level].block_cells[jpc_holder[jp								
+							      |		}else{ERROR(18);}								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void f_read(){						      |									
+	struct cell read_cell;				      |	void f_read(){								
+	struct cell lod_cell;				      |		struct cell read_cell;								
+	struct symbol sym;				      |		struct cell lod_cell;								
+	int sym_index;					      |		struct symbol sym;								
+	get_token();					      |		int sym_index;								
+	if(token == 2){					      |		get_token();								
+		sym.name = get_name();			      |		if(token == 2){								
+		if(sym.name != NULL){			      |			sym.name = get_name();								
+			sym_index = find_ident(sym.name);     |			if(sym.name != NULL){								
+			if(sym_index >= 0){		      |				sym_index = find_ident(sym.name);								
+				//load address to stack	      |				if(sym_index >= 0){								
+				lod_cell.op = 3;	      |					//load address to stack								
+				lod_cell.l = level - symbol_t |					lod_cell.op = 3;								
+				lod_cell.m = symbol_table[sym |					lod_cell.l = level - symbol_t								
+				//put cell in appropriate pos |					lod_cell.m = symbol_table[sym								
+				level_blocks[level].block_cel |					//put cell in appropriate pos								
+				level_blocks[level].size ++;  |					level_blocks[level].block_cel								
+				//send read command	      |					level_blocks[level].size ++;								
+				read_cell.op = 10;	      |					//send read command								
+				read_cell.l = 0;	      |					read_cell.op = 10;								
+				read_cell.m = 2;	      |					read_cell.l = 0;								
+				//put cell in appropriate pos |					read_cell.m = 2;								
+				level_blocks[level].block_cel |					//put cell in appropriate pos								
+				level_blocks[level].size ++;  |					level_blocks[level].block_cel								
+				get_token();		      |					level_blocks[level].size ++;								
+			}else{ERROR(11);}		      |					get_token();								
+		}else{ERROR(11);}			      |				}else{ERROR(11);}								
+	}else{ERROR(29);}				      |			}else{ERROR(11);}								
+							      |		}else{ERROR(29);}								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void f_write(){						      |									
+	struct cell wrt_cell;				      |	void f_write(){								
+	struct cell lod_cell;				      |		struct cell wrt_cell;								
+	struct symbol sym;				      |		struct cell lod_cell;								
+	int sym_index;					      |		struct symbol sym;								
+	get_token();					      |		int sym_index;								
+	if(token == 2){					      |		get_token();								
+		sym.name = get_name();			      |		if(token == 2){								
+		if(sym.name != NULL){			      |			sym.name = get_name();								
+			sym_index = find_ident(sym.name);     |			if(sym.name != NULL){								
+			if(sym_index >= 0){		      |				sym_index = find_ident(sym.name);								
+				//load address to stack	      |				if(sym_index >= 0){								
+				lod_cell.op = 3;	      |					//load address to stack								
+				lod_cell.l = level - symbol_t |					lod_cell.op = 3;								
+				lod_cell.m = symbol_table[sym |					lod_cell.l = level - symbol_t								
+				//put cell in appropriate pos |					lod_cell.m = symbol_table[sym								
+				level_blocks[level].block_cel |					//put cell in appropriate pos								
+				level_blocks[level].size ++;  |					level_blocks[level].block_cel								
+				//send write command	      |					level_blocks[level].size ++;								
+				wrt_cell.op = 9;	      |					//send write command								
+				wrt_cell.l = 0;		      |					wrt_cell.op = 9;								
+				wrt_cell.m = 1;		      |					wrt_cell.l = 0;								
+				//put cell in appropriate pos |					wrt_cell.m = 1;								
+				level_blocks[level].block_cel |					//put cell in appropriate pos								
+				level_blocks[level].size ++;  |					level_blocks[level].block_cel								
+				get_token();		      |					level_blocks[level].size ++;								
+			}else{ERROR(11);}		      |					get_token();								
+		}else{ERROR(11);}			      |				}else{ERROR(11);}								
+	}else{ERROR(29);}				      |			}else{ERROR(11);}								
+							      |		}else{ERROR(29);}								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void f_empty(){						      |									
+	printf("EMPTY_STRING?\n");			      |	void f_empty(){								
+							      |		printf("EMPTY_STRING?\n");								
+	return;						      |									
+}							      |		return;								
+							      |	}								
+void CONDITION(){					      |									
+	struct cell rel_cell;				      |	void CONDITION(){								
+	if(token == 8){					      |		struct cell rel_cell;								
+		get_token();				      |		if(token == 8){								
+		EXPRESSION();				      |			get_token();								
+		rel_cell.op = 2;			      |			EXPRESSION();								
+		rel_cell.l = 0;				      |			rel_cell.op = 2;								
+		rel_cell.m = 6;				      |			rel_cell.l = 0;								
+		level_blocks[level].block_cells[level_blocks[ |			rel_cell.m = 6;								
+		print_emit();				      |			level_blocks[level].block_cells[level_blocks[								
+		level_blocks[level].size ++;		      |			level_blocks[level].size ++;								
+							      |									
+	}else{						      |		}else{								
+		get_token();				      |			get_token();								
+		EXPRESSION();				      |			EXPRESSION();								
+		if(token > 8 && token < 15){		      |			if(token > 8 && token < 15){								
+			REL_OP();			      |				REL_OP();								
+		}else{ERROR(20);}			      |			}else{ERROR(20);}								
+	}						      |		}								
+							      |									
+	return;						      |		return;								
+}							      |	}								
+							      |									
+void REL_OP(){						      |	void REL_OP(){								
+	struct cell rel_cell;				      |		struct cell rel_cell;								
+	rel_cell.op = 2;				      |		rel_cell.op = 2;								
+	rel_cell.l = 0;					      |		rel_cell.l = 0;								
+							      |									
+	switch(token){					      |		switch(token){								
+		case 9:					      |			case 9:								
+			get_token();			      |				get_token();								
+			EXPRESSION();			      |				EXPRESSION();								
+			rel_cell.m = 8;			      |				rel_cell.m = 8;								
+			//put cell in appropriate cell_block  |				//put cell in appropriate cell_block								
+			level_blocks[level].block_cells[level |				level_blocks[level].block_cells[level								
+			level_blocks[level].size ++;	      |				level_blocks[level].size ++;								
+							      |									
+		break;					      |			break;								
+		case 10:				      |			case 10:								
+			get_token();			      |				get_token();								
+			EXPRESSION();			      |				EXPRESSION();								
+			rel_cell.m = 9;			      |				rel_cell.m = 9;								
+			//put cell in appropriate cell_block  |				//put cell in appropriate cell_block								
+			level_blocks[level].block_cells[level |				level_blocks[level].block_cells[level								
+			level_blocks[level].size ++;	      |				level_blocks[level].size ++;								
+		break;					      |			break;								
+		case 11:				      |			case 11:								
+			get_token();			      |				get_token();								
+			EXPRESSION();			      |				EXPRESSION();								
+			rel_cell.m = 10;		      |				rel_cell.m = 10;								
+			//put cell in appropriate cell_block  |				//put cell in appropriate cell_block								
+			level_blocks[level].block_cells[level |				level_blocks[level].block_cells[level								
+			level_blocks[level].size ++;	      |				level_blocks[level].size ++;								
+		break;					      |			break;								
+		case 12:				      |			case 12:								
+			get_token();			      |				get_token();								
+			EXPRESSION();			      |				EXPRESSION();								
+			rel_cell.m = 11;		      |				rel_cell.m = 11;								
+			//put cell in appropriate cell_block  |				//put cell in appropriate cell_block								
+			level_blocks[level].block_cells[level |				level_blocks[level].block_cells[level								
+			level_blocks[level].size ++;	      |				level_blocks[level].size ++;								
+		break;					      |			break;								
+		case 13:				      |			case 13:								
+			get_token();			      |				get_token();								
+			EXPRESSION();			      |				EXPRESSION();								
+			rel_cell.m = 12;		      |				rel_cell.m = 12;								
+			//put cell in appropriate cell_block  |				//put cell in appropriate cell_block								
+			level_blocks[level].block_cells[level |				level_blocks[level].block_cells[level								
+			level_blocks[level].size ++;	      |				level_blocks[level].size ++;								
+		break;					      |			break;								
+		case 14:				      |			case 14:								
+			get_token();			      |				get_token();								
+			EXPRESSION();			      |				EXPRESSION();								
+			rel_cell.m = 13;		      |				rel_cell.m = 13;								
+			//put cell in appropriate cell_block  |				//put cell in appropriate cell_block								
+			level_blocks[level].block_cells[level |				level_blocks[level].block_cells[level								
+			level_blocks[level].size ++;	      |				level_blocks[level].size ++;								
+		break;					      |			break;								
+	}//end switch					      |		}//end switch								
+							      |									
+	return;						      |		return;								
+}							      |	}								
+							      |									
+void EXPRESSION(){					      |	void EXPRESSION(){								
+	struct cell exp_cell;				      |		struct cell exp_cell;								
+	exp_cell.op = 2;				      |		exp_cell.op = 2;								
+	exp_cell.l = 0;					      |		exp_cell.l = 0;								
+							      |									
+	if ((token == 4)||(token == 5)){		      |		if ((token == 4)||(token == 5)){								
+	    //if the number is negative			      |		    //if the number is negative								
+	    if(token == 5){				      |		    if(token == 5){								
+	        exp_cell.m = 1;				      |		        exp_cell.m = 1;								
+	        //put cell in appropriate cell_block	      |		        //put cell in appropriate cell_block								
+	        level_blocks[level].block_cells[level_blocks[ |		        level_blocks[level].block_cells[level_blocks[								
+	        print_emit();				      |				level_blocks[level].size ++;								
+			level_blocks[level].size ++;	      |		    }								
+	    }						      |	        get_token();								
+        get_token();					      |	        TERM();								
+        TERM();						      |		}								
+	}						      |		else{								
+	else{						      |	        TERM();								
+        TERM();						      |		}								
+	}						      |									
+							      |		while(token == 4 || token == 5){								
+	while(token == 4 || token == 5){		      |			if(token == 4){								
+		if(token == 4){				      |				exp_cell.m = 2;								
+			exp_cell.m = 2;			      |				//put cell in appropriate cell_block								
+			//put cell in appropriate cell_block  |				level_blocks[level].block_cells[level								
+			level_blocks[level].block_cells[level |				level_blocks[level].size ++;								
+			level_blocks[level].size ++;	      |			}else if(token == 5){								
+		}else if(token == 5){			      |				exp_cell.m = 3;								
+			exp_cell.m = 3;			      |				//put cell in appropriate cell_block								
+			//put cell in appropriate cell_block  |				level_blocks[level].block_cells[level								
+			level_blocks[level].block_cells[level |				level_blocks[level].size ++;								
+			level_blocks[level].size ++;	      |			}								
+		}					      |			get_token();								
+		get_token();				      |			TERM();								
+		TERM();					      |		}//end while								
+	}//end while					      |									
+							      |		return;								
+	return;						      |	}								
+}							      |									
+							      |	void TERM(){								
+void TERM(){						      |		struct cell term_cell;								
+	struct cell term_cell;				      |		term_cell.op = 2;								
+	term_cell.op = 2;				      |		term_cell.l = 0;								
+	term_cell.l = 0;				      |									
+							      |		FACTOR();								
+	FACTOR();					      |									
+							      |		while(token == 6 || token == 7){								
+	while(token == 6 || token == 7){		      |			if(token == 6){								
+		if(token == 6){				      |				term_cell.m = 4;								
+			term_cell.m = 4;		      |				//put cell in appropriate cell_block								
+			//put cell in appropriate cell_block  |				level_blocks[level].block_cells[level								
+			level_blocks[level].block_cells[level |				level_blocks[level].size ++;								
+			print_emit();			      |			}else if(token == 7){								
+			level_blocks[level].size ++;	      |				term_cell.m = 5;								
+		}else if(token == 7){			      |				//put cell in appropriate cell_block								
+			term_cell.m = 5;		      |				level_blocks[level].block_cells[level								
+			//put cell in appropriate cell_block  |				level_blocks[level].size ++;								
+			level_blocks[level].block_cells[level |			}								
+			print_emit();			      |	        get_token();								
+			level_blocks[level].size ++;	      |	        FACTOR();								
+		}					      |		}//end while								
+        get_token();					      |									
+        FACTOR();					      |		return;								
+	}//end while					      |	}								
+							      |									
+	return;						      |	void FACTOR(){								
+}							      |		struct symbol sym;								
+							      |		struct cell lit_cell;								
+void FACTOR(){						      |		int sym_index;								
+	struct symbol sym;				      |									
+	struct cell lit_cell;				      |		if(token == 2){								
+	int sym_index;					      |			sym.name = get_name();								
+							      |			if(sym.name != NULL){								
+	if(token == 2){					      |				sym_index = find_ident(sym.name);								
+		sym.name = get_name();			      |				if(sym_index >= 0){								
+		if(sym.name != NULL){			      |					//get symbol info								
+			sym_index = find_ident(sym.name);     |					sym = symbol_table[sym_index]								
+			if(sym_index >= 0){		      |					printf("Found symbol, %s, %d,								
+				//get symbol info	      |					if(sym.addr > 0 && sym.addr <								
+				sym = symbol_table[sym_index] |						//has addr load from 								
+				printf("Found symbol, %s, %d, |						//create new cell wit								
+				if(sym.addr > 0 && sym.addr < |						lit_cell.op = 3;								
+					//has addr load from  |						lit_cell.l = level - 								
+					//create new cell wit |						lit_cell.m = sym.addr								
+					lit_cell.op = 3;      |					}else{								
+					lit_cell.l = level -  |						//no addr push lit to								
+					lit_cell.m = sym.addr |						lit_cell.op = 1;								
+				}else{			      |						lit_cell.l = 0;								
+					//no addr push lit to |						lit_cell.m = sym.val;								
+					lit_cell.op = 1;      |					}								
+					lit_cell.l = 0;	      |					//put cell in appropriate cel								
+					lit_cell.m = sym.val; |					level_blocks[level].block_cel								
+				}			      |					level_blocks[level].size ++;								
+				//put cell in appropriate cel |									
+				level_blocks[level].block_cel |									
+				print_emit();		      |				}else{ERROR(11);}								
+				level_blocks[level].size ++;  |			}else{ERROR(11);}								
+							      |		}else if(token == 3){								
+							      |			sym.val = get_num();								
+			}else{ERROR(11);}		      |				printf("Got number! %d\n", sym.val);								
+		}else{ERROR(11);}			      |				//input number into code list								
+	}else if(token == 3){				      |				lit_cell.op = 1;								
+		sym.val = get_num();			      |				lit_cell.l = 0;								
+			printf("Got number! %d\n", sym.val);  |				lit_cell.m = sym.val;								
+			//input number into code list	      |				//put cell in appropriate cell_block								
+			lit_cell.op = 1;		      |				level_blocks[level].block_cells[level								
+			lit_cell.l = 0;			      |				level_blocks[level].size ++;								
+			lit_cell.m = sym.val;		      |		}else if(token == 15){								
+			//put cell in appropriate cell_block  |			get_token();								
+			level_blocks[level].block_cells[level |			EXPRESSION();								
+			level_blocks[level].size ++;	      |			if(token != 16){ERROR(22);}								
+							      |		}else{ERROR(29);}								
+	}else if(token == 15){				      |		get_token();								
+		get_token();				      |		return;								
+		EXPRESSION();				      |	}								
+		if(token != 16){ERROR(22);}		      |									
+	}else{ERROR(29);}				      |	void ERROR(int i){								
+	get_token();					      |		errors ++;								
+	return;						      |		switch(i){								
+}							      |			case 1:								
+							      |				printf("ERROR #%d, use = instead of :								
+void ERROR(int i){					      |				exit(0);								
+	errors ++;					      |			break;								
+	switch(i){					      |			case 2:								
+		case 1:					      |				printf("ERROR #%d, = must be followed								
+			printf("ERROR #%d, use = instead of : |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 3:								
+		case 2:					      |				printf("ERROR #%d, Identifier must be								
+			printf("ERROR #%d, = must be followed |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 4:								
+		case 3:					      |				printf("ERROR #%d, const, int, proced								
+			printf("ERROR #%d, Identifier must be |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 5:								
+		case 4:					      |				printf("ERROR #%d, Semicolon or comma								
+			printf("ERROR #%d, const, int, proced |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 6:								
+		case 5:					      |				printf("ERROR #%d, Incorrect symbol a								
+			printf("ERROR #%d, Semicolon or comma |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 7:								
+		case 6:					      |				printf("ERROR #%d, Statement expected								
+			printf("ERROR #%d, Incorrect symbol a |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 8:								
+		case 7:					      |				printf("ERROR #%d, Incorrect symbol a								
+			printf("ERROR #%d, Statement expected |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 9:								
+		case 8:					      |				printf("ERROR #%d, No period at end o								
+			printf("ERROR #%d, Incorrect symbol a |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 10:								
+		case 9:					      |				printf("ERROR #%d, Semicolon between 								
+			printf("ERROR #%d, No period at end o |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 11:								
+		case 10:				      |				printf("ERROR #%d, Undeclared identif								
+			printf("ERROR #%d, Semicolon between  |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 12:								
+		case 11:				      |				printf("ERROR #%d, Assignment to cons								
+			printf("ERROR #%d, Undeclared identif |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 13:								
+		case 12:				      |				printf("ERROR #%d, Assignment operato								
+			printf("ERROR #%d, Assignment to cons |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 14:								
+		case 13:				      |				printf("ERROR #%d, call must be follo								
+			printf("ERROR #%d, Assignment operato |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 15:								
+		case 14:				      |				printf("ERROR #%d, Call of a constant								
+			printf("ERROR #%d, call must be follo |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 16:								
+		case 15:				      |				printf("ERROR #%d, then	 expected.", 								
+			printf("ERROR #%d, Call of a constant |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 17:								
+		case 16:				      |				printf("ERROR #%d, Semicolon or } exp								
+			printf("ERROR #%d, then	 expected.",  |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 18:								
+		case 17:				      |				printf("ERROR #%d, do expected.\n", i								
+			printf("ERROR #%d, Semicolon or } exp |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 19:								
+		case 18:				      |				printf("ERROR #%d, Incorrect symbol f								
+			printf("ERROR #%d, do expected.\n", i |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 20:								
+		case 19:				      |				printf("ERROR #%d, Relational operato								
+			printf("ERROR #%d, Incorrect symbol f |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 21:								
+		case 20:				      |				printf("ERROR #%d, Expression must no								
+			printf("ERROR #%d, Relational operato |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 22:								
+		case 21:				      |				printf("ERROR #%d, Right parenthesis 								
+			printf("ERROR #%d, Expression must no |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 23:								
+		case 22:				      |				printf("ERROR #%d, The preceding fact								
+			printf("ERROR #%d, Right parenthesis  |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 24:								
+		case 23:				      |				printf("ERROR #%d, An expression cann								
+			printf("ERROR #%d, The preceding fact |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 25:								
+		case 24:				      |				printf("ERROR #%d, This number is too								
+			printf("ERROR #%d, An expression cann |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 26:								
+		case 25:				      |				printf("ERROR #%d, Identifier followe								
+			printf("ERROR #%d, This number is too |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 27:								
+		case 26:				      |				printf("ERROR #%d, Unexpected end of 								
+			printf("ERROR #%d, Identifier followe |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 28:								
+		case 27:				      |				printf("ERROR #%d, variable cannot be								
+			printf("ERROR #%d, Unexpected end of  |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 29:								
+		case 28:				      |				printf("ERROR #%d, expecting variable								
+			printf("ERROR #%d, variable cannot be |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |			case 30:								
+		case 29:				      |				printf("ERROR #%d, 'End' Expected\n",								
+			printf("ERROR #%d, expecting variable |				exit(0);								
+			exit(0);			      |			break;								
+		break;					      |		}//end switch								
+		case 30:				      |	}//end error								
+			printf("ERROR #%d, 'End' Expected\n", |									
+			exit(0);			      |	void get_token(){								
+		break;					      |									
+	}//end switch					      |		if(!feof(inFile)){								
+}//end error						      |			fscanf(inFile, "%d", &token);								
+							      |			printf("Got here with %d\n", token);								
+void get_token(){					      |		}else{								
+							      |			ERROR(26);								
+	if(!feof(inFile)){				      |		}								
+		fscanf(inFile, "%d", &token);		      |		return;								
+		printf("Got here with %d\n", token);	      |	}//end get_token								
+	}else{						      |									
+		ERROR(26);				      |	char* get_name(){								
+	}						      |									
+	return;						      |		char* name = (char*)calloc(11, sizeof(char));								
+}//end get_token					      |		fscanf(inFile, "%s", name);								
+							      |									
+char* get_name(){					      |		return name;								
+							      |	}//end get_name								
+	char* name = (char*)calloc(11, sizeof(char));	      |									
+	fscanf(inFile, "%s", name);			      |	int get_num(){								
+							      |		int i;								
+	return name;					      |		fscanf(inFile, "%d", &i);								
+}//end get_name						      |		return i;								
+							      |	}//end get_num								
+int get_num(){						      |									
+	int i;						      |	void table_insert(struct symbol sym){								
+	fscanf(inFile, "%d", &i);			      |		if(sym.kind != (int)NULL){								
+	return i;					      |			symbol_table[table_index].kind = sym.kind;								
+}//end get_num						      |		}								
+							      |		if(sym.name != NULL){								
+void table_insert(struct symbol sym){			      |			symbol_table[table_index].name = sym.name;								
+	if(sym.kind != (int)NULL){			      |		}								
+		symbol_table[table_index].kind = sym.kind;    |		if(sym.val != (int)NULL){								
+	}						      |			symbol_table[table_index].val = sym.val;								
+	if(sym.name != NULL){				      |		}								
+		symbol_table[table_index].name = sym.name;    |		if(sym.level != (int)NULL){								
+	}						      |			symbol_table[table_index].level = sym.level;								
+	if(sym.val != (int)NULL){			      |		}								
+		symbol_table[table_index].val = sym.val;      |		if(sym.addr != (int)NULL){								
+	}						      |			symbol_table[table_index].addr = sym.addr;								
+	if(sym.level != (int)NULL){			      |		}								
+		symbol_table[table_index].level = sym.level;  |		table_index ++;								
+	}						      |									
+	if(sym.addr != (int)NULL){			      |		return;								
+		symbol_table[table_index].addr = sym.addr;    |	}								
+	}						      |									
+	table_index ++;					      |	int find_ident(char* id){								
+							      |		int i;								
+	return;						      |		int maybe = -1;								
+}							      |		for(i = 0; i < table_index; i ++){								
+							      |			if(strcmp(id, symbol_table[i].name) == 0){								
+int find_ident(char* id){				      |				if(symbol_table[i].level == level){								
+	int i;						      |					return i;								
+	int maybe = -1;					      |				}else{								
+	for(i = 0; i < table_index; i ++){		      |					maybe = i;								
+		if(strcmp(id, symbol_table[i].name) == 0){    |				}								
+			if(symbol_table[i].level == level){   |			}								
+				return i;		      |		}								
+			}else{				      |									
+				maybe = i;		      |		return maybe;								
+			}				      |	}								
+		}					      |									
+	}						      |	int get_table_addr(){								
+							      |		int i = -1;								
+	return maybe;					      |									
+}							      |		i = level_addr_index[level] ++;								
+							      |		printf("Increased increment to %d\n", i);								
+int get_table_addr(){					      |		return i;								
+	int i = -1;					      |	}								
+							      |									
+	i = level_addr_index[level] ++;			      |	void print_code_arrays(){								
+	printf("Increased increment to %d\n", i);	      |		int i, j;								
+	return i;					      |		for(i = 3; i > -1; i --){								
+}							      |			if(level_blocks[i].size > 0){								
+							      |				printf("Code Block %d:\n\n", i);								
+void print_code_arrays(){				      |				for(j = 0; j < level_blocks[i].size; 								
+	int i, j;					      |					printf("%d %d %d\n", level_bl								
+	for(i = 3; i > -1; i --){			      |																
+		if(level_blocks[i].size > 0){		      |																
+			printf("Code Block %d:\n\n", i);      |				}								
+			for(j = 0; j < level_blocks[i].size;  |			}								
+				printf("%d %d %d\n", level_bl |		}								
+							      |									
+							      |		printf("\nMaster Block: \n\n");								
+			}				      |		for(j = 0; j < master_block.size; j ++){								
+		}					      |			printf("%d %d %d\n", master_block.block_cells								
+	}						      |			fprintf(outFile, "%d %d %d\n", master_block.b								
+							      |		}								
+	printf("\nMaster Block: \n\n");			      |	}								
+	for(j = 0; j < master_block.size; j ++){	      |									
+		printf("%d %d %d\n", master_block.block_cells |	void print_emit(){								
+		fprintf(outFile, "%d %d %d\n", master_block.b |		printf("Emit:\n");								
+	}						      |		printf("Level: %d\n", level);								
+}							      |		printf("%d %d %d\n", level_blocks[level].block_cells[								
+							      |								level								
+void print_emit(){					      |								level								
+	printf("Emit:\n");				      |	}								
+	printf("Level: %d\n", level);			      <
+	printf("%d %d %d\n", level_blocks[level].block_cells[ <
+							level <
+							level <
+}							      <
