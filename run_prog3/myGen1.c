@@ -302,6 +302,8 @@ void PROCDEC(){
 						if(level_blocks[level].block_cells[stitch_index].op == 8){
 							level_blocks[level].block_cells[stitch_index].m += level_offset;
 						}
+						//level_blocks[level - 1].block_cells[level_blocks[level - 1].size] = level_blocks[level].block_cells[stitch_index];
+						//level_blocks[level - 1].size++;
 						master_block.block_cells[master_block.size] = level_blocks[level].block_cells[stitch_index];
 						master_block.size ++;
 					}
@@ -441,6 +443,22 @@ void f_if(){
 		//back from statement block, must update jump condition m value
 		jpc_holder_index --;
 		level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
+		if(token == 33){
+			level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m ++;
+			struct cell else_cell;
+			else_cell.op = 7;
+			else_cell.l = 0;
+			get_token();
+			jpc_holder[jpc_holder_index] = level_blocks[level].size;
+			jpc_holder_index ++;
+			//place unfinished jump conditional cell in place
+			level_blocks[level].block_cells[level_blocks[level].size] = else_cell;
+			level_blocks[level].size ++;
+			STATEMENT();
+			//back from statement block, must update jump condition m value
+			jpc_holder_index --;
+			level_blocks[level].block_cells[jpc_holder[jpc_holder_index]].m = level_blocks[level].size;
+		}
 	}else{ERROR(16);}
 
 	return;
