@@ -33,7 +33,7 @@ char* int_to_string(char* pass_str, int d);
 
 int main(void){
     FILE* fpin;
-    char *filename = "test.in";
+    char *filename = "input5.txt";
 	fpin = fopen(filename, "r");
 	if(!fpin){
         printf("Error in opening input file for reading!");

@@ -1,3 +1,8 @@
+//Daniel Moore and Tabitha Cliver
+//Systems Software, Spring 2013
+//Assignment 3: Parser - Code Generator
+//This program will read CG_out.txt and produce correct function calls to toVM.txt
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,13 +77,14 @@ static FILE* outFile;
 static struct symbol symbol_table[500];
 static int table_index = 0;
 static int level = 0;
-static struct code_block level_blocks[3];
+static struct code_block level_blocks[4];
 static int jpc_holder[10];
 static int jpc_holder_index = 0;
 static struct code_block master_block;
 static int level_addr_index[4];
 static int level_offset = 0;
 static int jmp_holder[10];
+static int call_holder = -1;
 //static struct cell inc_cell;
 
 int main(void){
@@ -142,16 +148,7 @@ void BLOCK(){
 
 	struct cell inc_cell;
 	struct cell opr_cell;
-/*	//create machine code for increment
-//	inc_cell.op = 6;
-//	inc_cell.l = 0;
-//	inc_cell.m = level_addr_index[level]+table_index;
-	printf("set increament level to %d at level %d\n", inc_cell.m, level);
-	//put cell in appropriate position
-	level_blocks[level].block_cells[level_blocks[level].size] = inc_cell;
-	print_emit();
-	level_blocks[level].size ++;
-*/
+
 	printf("Called Block\n");
 	if(token > 27 && token < 31){
 		if(token == 28){
@@ -168,9 +165,7 @@ void BLOCK(){
 			printf("set increament level to %d at level %d\n", inc_cell.m, level);
 			//put cell in appropriate position
 			level_blocks[level].block_cells[level_blocks[level].size] = inc_cell;
-			print_emit();
 			level_blocks[level].size ++;
-
 
 		}
 		if(token == 30){
@@ -179,7 +174,7 @@ void BLOCK(){
 
 		}
 	}
-
+	
 
 	STATEMENT();
 
@@ -188,6 +183,7 @@ void BLOCK(){
 	opr_cell.m = 0;
 	//put cell in appropriate position
 	level_blocks[level].block_cells[level_blocks[level].size] = opr_cell;
+	print_emit();
 	level_blocks[level].size ++;
 
 	return;
@@ -264,11 +260,18 @@ void VARDEC(){
 }
 
 void PROCDEC(){
+	int loop;
+	int temp_addr = 0;
 	int sym_index;
 	int stitch_index;
 	struct symbol sym;
 	sym.kind = 3;
 	sym.level = level;
+	temp_addr = level + 2;
+	for (loop = level; loop > 1; loop --){
+		temp_addr += level_blocks[loop - 1].size; 
+	}
+	sym.addr = temp_addr;
 	while(token == 30){
 		get_token();
 		if(token == 21){
@@ -486,19 +489,19 @@ void f_read(){
 		if(sym.name != NULL){
 			sym_index = find_ident(sym.name);
 			if(sym_index >= 0){
-				//load address to stack
-				lod_cell.op = 3;
-				lod_cell.l = level - symbol_table[sym_index].level;
-				lod_cell.m = symbol_table[sym_index].addr;
-				//put cell in appropriate position
-				level_blocks[level].block_cells[level_blocks[level].size] = lod_cell;
-				level_blocks[level].size ++;
 				//send read command
 				read_cell.op = 10;
 				read_cell.l = 0;
 				read_cell.m = 2;
 				//put cell in appropriate position
 				level_blocks[level].block_cells[level_blocks[level].size] = read_cell;
+				level_blocks[level].size ++;
+				//load address to stack
+				lod_cell.op = 4;
+				lod_cell.l = level - symbol_table[sym_index].level;
+				lod_cell.m = symbol_table[sym_index].addr;
+				//put cell in appropriate position
+				level_blocks[level].block_cells[level_blocks[level].size] = lod_cell;
 				level_blocks[level].size ++;
 				get_token();
 			}else{ERROR(11);}
@@ -556,6 +559,7 @@ void CONDITION(){
 		rel_cell.l = 0;
 		rel_cell.m = 6;
 		level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+		print_emit();
 		level_blocks[level].size ++;
 
 	}else{
@@ -581,6 +585,7 @@ void REL_OP(){
 			rel_cell.m = 8;
 			//put cell in appropriate cell_block
 			level_blocks[level].block_cells[level_blocks[level].size] = rel_cell;
+			print_emit();
 			level_blocks[level].size ++;
 
 		break;
@@ -640,6 +645,7 @@ void EXPRESSION(){
 	        exp_cell.m = 1;
 	        //put cell in appropriate cell_block
 	        level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
+	        print_emit();
 			level_blocks[level].size ++;
 	    }
         get_token();
@@ -651,18 +657,20 @@ void EXPRESSION(){
 
 	while(token == 4 || token == 5){
 		if(token == 4){
+			get_token();
+			TERM();
 			exp_cell.m = 2;
 			//put cell in appropriate cell_block
 			level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
 			level_blocks[level].size ++;
 		}else if(token == 5){
+			get_token();
+			TERM();
 			exp_cell.m = 3;
 			//put cell in appropriate cell_block
 			level_blocks[level].block_cells[level_blocks[level].size] = exp_cell;
 			level_blocks[level].size ++;
 		}
-		get_token();
-		TERM();
 	}//end while
 
 	return;
@@ -678,17 +686,21 @@ void TERM(){
 	while(token == 6 || token == 7){
 		if(token == 6){
 			term_cell.m = 4;
+			get_token();
+        	FACTOR();
 			//put cell in appropriate cell_block
 			level_blocks[level].block_cells[level_blocks[level].size] = term_cell;
+			print_emit();
 			level_blocks[level].size ++;
 		}else if(token == 7){
 			term_cell.m = 5;
 			//put cell in appropriate cell_block
+			get_token();
+        	FACTOR();
 			level_blocks[level].block_cells[level_blocks[level].size] = term_cell;
+			print_emit();
 			level_blocks[level].size ++;
 		}
-        get_token();
-        FACTOR();
 	}//end while
 
 	return;
@@ -943,7 +955,7 @@ int get_table_addr(){
 
 void print_code_arrays(){
 	int i, j;
-	for(i = 3; i > -1; i --){
+	for(i = 2; i > -1; i --){
 		if(level_blocks[i].size > 0){
 			printf("Code Block %d:\n\n", i);
 			for(j = 0; j < level_blocks[i].size; j++){
@@ -962,9 +974,10 @@ void print_code_arrays(){
 }
 
 void print_emit(){
-	printf("Emit:\n");
+	printf("EMIT>>>>>>>>>>>\n");
 	printf("Level: %d\n", level);
-	printf("%d %d %d\n", level_blocks[level].block_cells[level_blocks[level].size].op,
+	printf("%d, %d, %d\n", level_blocks[level].block_cells[level_blocks[level].size].op,
 							level_blocks[level].block_cells[level_blocks[level].size].l,
 							level_blocks[level].block_cells[level_blocks[level].size].m);
 }
+

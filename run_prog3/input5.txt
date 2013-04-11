@@ -36,4 +36,8 @@ begin
     x := m ; y:= n ;  call multiply;
     x := 25; y := 3; call divide;
     x := 84; y:= 36; call gcd;
+<<<<<<< HEAD
 end.
+=======
+end.
+>>>>>>> ad7c7b1ce01a02dbf073adf4acab6cf73f4bb27e

@@ -13,4 +13,8 @@ begin
 n:=3;
 call fact;
 write f;
+<<<<<<< HEAD
 end.
+=======
+end.
+>>>>>>> ad7c7b1ce01a02dbf073adf4acab6cf73f4bb27e

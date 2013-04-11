@@ -3,4 +3,8 @@ int ans1, ans2;
 begin
   ans1:= x*y+z;
   ans2:= x*(y+z);
+<<<<<<< HEAD
 end.
+=======
+end.
+>>>>>>> ad7c7b1ce01a02dbf073adf4acab6cf73f4bb27e
