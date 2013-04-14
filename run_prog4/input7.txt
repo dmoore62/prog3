@@ -1,0 +1,7 @@
+int x;
+/*comment!!*/
+begin
+	x := 3;
+	while x = 2 do
+		x := 2;
+end.

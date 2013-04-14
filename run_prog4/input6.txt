@@ -1,0 +1,6 @@
+const x = 1, y = 2, z = 3;
+int w;
+begin
+  if x = 1 then w := 67
+  else w := 76
+end.
